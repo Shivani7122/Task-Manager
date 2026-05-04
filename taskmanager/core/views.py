@@ -1,12 +1,16 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from .models import Project, Task
 from .serializers import ProjectSerializer, TaskSerializer
+from datetime import date
 
 
 # 🔹 Create Project (Admin only)
 class ProjectCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request):
         if request.user.role != 'admin':
             return Response({"error": "Only admin can create project"}, status=403)
@@ -21,6 +25,8 @@ class ProjectCreateView(APIView):
 
 # 🔹 Create Task (Admin only)
 class TaskCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request):
         if request.user.role != 'admin':
             return Response({"error": "Only admin can assign tasks"}, status=403)
@@ -33,8 +39,10 @@ class TaskCreateView(APIView):
         return Response(serializer.errors, status=400)
 
 
-# 🔹 Update Task (Member)
+# 🔹 Update Task (Member only)
 class TaskUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def put(self, request, pk):
         try:
             task = Task.objects.get(id=pk)
@@ -50,8 +58,10 @@ class TaskUpdateView(APIView):
         return Response({"message": "Task updated"})
 
 
-# 🔹 Get Tasks
+# 🔹 Get Tasks (Admin = all, Member = own)
 class TaskListView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
         if request.user.role == 'admin':
             tasks = Task.objects.all()
@@ -60,3 +70,21 @@ class TaskListView(APIView):
 
         serializer = TaskSerializer(tasks, many=True)
         return Response(serializer.data)
+
+class DashboardView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        tasks = Task.objects.all()
+
+        total_tasks = tasks.count()
+        completed_tasks = tasks.filter(status='done').count()
+        pending_tasks = tasks.filter(status='pending').count()
+        overdue_tasks = tasks.filter(deadline__lt=date.today()).exclude(status='done').count()
+
+        return Response({
+            "total_tasks": total_tasks,
+            "completed_tasks": completed_tasks,
+            "pending_tasks": pending_tasks,
+            "overdue_tasks": overdue_tasks
+        })

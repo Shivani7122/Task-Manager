@@ -18,11 +18,15 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from core.views import ProjectCreateView, TaskCreateView, TaskUpdateView, TaskListView
+from rest_framework_simplejwt.views import TokenObtainPairView
+from core.views import DashboardView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-     path('create-project/', ProjectCreateView.as_view()),
+    path('create-project/', ProjectCreateView.as_view()),
     path('create-task/', TaskCreateView.as_view()),
     path('update-task/<int:pk>/', TaskUpdateView.as_view()),
     path('tasks/', TaskListView.as_view()),
+    path('login/', TokenObtainPairView.as_view()),
+    path('dashboard/', DashboardView.as_view()),
 ]
