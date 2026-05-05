@@ -47,7 +47,9 @@
 
         <input id="projectTitle" placeholder="Project title">
         <input id="projectDesc" placeholder="Description">
-        <select id="createdBySelect"></select>
+        <select id="createdBySelect">
+          <option value="">Select User</option>
+        </select>
 
         <button onclick="createProject()">➕ Create Project</button>
 
@@ -60,16 +62,28 @@
         <h3>✅ Create Task</h3>
 
         <input id="taskTitle" placeholder="Title">
+        <input id="taskTitle" placeholder="Title">
         <input id="taskDesc" placeholder="Description">
 
+        <label>📊 Status</label>
         <select id="status">
           <option value="pending">Pending</option>
           <option value="in_progress">In Progress</option>
           <option value="done">Done</option>
         </select>
 
-        <select id="assignedUser"></select>
-        <select id="projectSelect"></select>
+        <label>👤 Assigned To</label>
+        <select id="assignedUser">
+          <option value="">Select User</option>
+        </select>
+
+        <label>📦 Project</label>
+        <select id="projectSelect">
+          <option value="">Select Project</option>
+        </select>
+
+        <label>📅 Deadline</label>
+        <input type="date" id="deadline">
 
         <input type="date" id="deadline">
 

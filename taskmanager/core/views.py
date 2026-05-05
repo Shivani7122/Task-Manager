@@ -22,8 +22,11 @@ class ProjectCreateView(APIView):
 
         serializer = ProjectSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(created_by=request.user)
-            return Response(serializer.data)
+           from .models import User
+           created_by_id = request.data.get("created_by")
+           user = User.objects.get(id=created_by_id)
+           serializer.save(created_by=user)
+           return Response(serializer.data)
 
         return Response(serializer.errors, status=400)
 

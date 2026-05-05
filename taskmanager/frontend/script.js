@@ -129,10 +129,11 @@ function loadUsers() {
       // dropdown
       const dropdown = document.getElementById("assignedUser");
       if (dropdown) {
-        dropdown.innerHTML = users.map(u =>
-          `<option value="${u.id}">${u.username}</option>`
-        ).join("");
-      }
+       dropdown.innerHTML = users.map(u =>
+        `<option value="${u.id}">
+          👤 ${u.username} (${u.role})
+        </option>`
+      ).join("");
 
       // user list
       const list = document.getElementById("usersList");
@@ -150,6 +151,14 @@ function loadUsers() {
           <button onclick="deleteUser(${u.id})">❌</button>
         </div>
       `).join("");
+      }
+      const createdBy = document.getElementById("createdBySelect");
+      if (createdBy) {
+        createdBy.innerHTML = users.map(u =>
+          `<option value="${u.id}">
+            👤 ${u.username}
+          </option>`
+        ).join("");
       }
     });
 }
@@ -197,7 +206,9 @@ function loadProjects() {
       const dropdown = document.getElementById("projectSelect");
       if (dropdown) {
         dropdown.innerHTML = data.map(p =>
-          `<option value="${p.id}">${p.title}</option>`
+          `<option value="${p.id}">
+              📦 ${p.title}
+            </option>`
         ).join("");
       }
 
@@ -319,12 +330,12 @@ function deleteTask(id) {
 
 /* ================= PROJECT ================= */
 function createProject() {
-  const title = projectTitle.value.trim();
-  const description = projectDesc.value.trim();
-  const createdBy = createdBySelect.value;
+  const title = document.getElementById("projectTitle").value.trim();
+  const description = document.getElementById("projectDesc").value.trim();
+  const createdBy = document.getElementById("createdBySelect").value;
 
   if (!title || !description || !createdBy) {
-    alert("Fill all fields");
+    alert("All fields required ❌");
     return;
   }
 
@@ -335,12 +346,32 @@ function createProject() {
       ...authHeader()
     },
     body: JSON.stringify({
-      title,
-      description,
+      title: title,
+      description: description,
       created_by: parseInt(createdBy)
     })
-  }).then(loadProjects);
+  })
+    .then(async res => {
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert("❌ " + JSON.stringify(data));
+        return;
+      }
+
+      alert("✅ Project Created");
+
+      // 🔄 reset fields
+      document.getElementById("projectTitle").value = "";
+      document.getElementById("projectDesc").value = "";
+
+      loadProjects();
+    })
+    .catch(() => {
+      alert("Server error ❌");
+    });
 }
+
 
 function deleteProject(id) {
   if (!confirm("Delete project?")) return;
