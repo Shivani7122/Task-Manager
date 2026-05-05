@@ -4,39 +4,62 @@ let currentUser = null;
 
 /* LOGIN */
 function login() {
-  const username = document.getElementById("username").value;
-  const password = document.getElementById("password").value;
+  const usernameEl = document.getElementById("username");
+  const passwordEl = document.getElementById("password");
+  const msg = document.getElementById("msg");
+
+  if (!usernameEl || !passwordEl) {
+    console.error("❌ Input fields not found");
+    return;
+  }
+
+  const username = usernameEl.value.trim();
+  const password = passwordEl.value.trim();
+
+  if (!username || !password) {
+    msg.innerText = "Enter username & password";
+    return;
+  }
 
   fetch(`${API_URL}/api/auth/login/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({
-      username,
-      password
-    })
+    body: JSON.stringify({ username, password })
   })
   .then(async res => {
     const data = await res.json();
-
     console.log("LOGIN RESPONSE:", data);
 
     if (res.ok && data.access) {
       localStorage.setItem("token", data.access);
 
-      // TEMP FIX (admin id)
-      localStorage.setItem("user_id", 1);
+      // 🔥 IMPORTANT: USER FETCH करो
+      fetch(`${API_URL}/api/users/`, {
+        headers: {
+          Authorization: "Bearer " + data.access
+        }
+      })
+      .then(res => res.json())
+      .then(users => {
+        const user = users.find(u => u.username === username);
 
-      window.location.href = "dashboard.html";
+        if (user) {
+          localStorage.setItem("user_id", user.id);
+          localStorage.setItem("role", user.role);
+        }
+
+        window.location.href = "dashboard.html";
+      });
+
     } else {
-      document.getElementById("msg").innerText =
-        data.detail || "Invalid credentials";
+      msg.innerText = data.detail || "Invalid credentials";
     }
   })
   .catch(err => {
     console.error("LOGIN ERROR:", err);
-    document.getElementById("msg").innerText = "Server error";
+    msg.innerText = "Server error";
   });
 }
 
