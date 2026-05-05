@@ -70,26 +70,29 @@ function loadTasks() {
   })
   .then(res => res.json())
   .then(tasks => {
-    let html = "";
     const role = getUserRole();
 
-    tasks.forEach(t => {
-      html += `
-        <div class="task">
-          <div>
-            <b>${t.title}</b><br>
-            <span class="${t.status}">${t.status}</span>
-          </div>
-
-          <div>
-            ${role === "admin" ? `<button onclick="deleteTask(${t.id})">🗑</button>` : ""}
-            <button onclick="updateStatus(${t.id},'done')">✔</button>
-          </div>
+    tasksDiv.innerHTML = tasks.map(t => `
+      <div class="task">
+        <div>
+          <b>${t.title}</b><br>
+          <small>${t.description || ""}</small><br>
+          👤 ${t.assigned_to_username || "N/A"} <br>
+          📦 ${t.project_title || "N/A"} <br>
+          <span class="${t.status}">${t.status}</span>
         </div>
-      `;
-    });
 
-    tasksDiv.innerHTML = html;
+        <div>
+          ${role === "admin" ? `
+            <button onclick="deleteTask(${t.id})">🗑</button>
+          ` : ""}
+
+          <button onclick="updateStatus(${t.id}, 'pending')">P</button>
+          <button onclick="updateStatus(${t.id}, 'in_progress')">IP</button>
+          <button onclick="updateStatus(${t.id}, 'done')">✔</button>
+        </div>
+      </div>
+    `).join("");
   });
 }
 
@@ -160,13 +163,33 @@ function loadUsersList() {
   .then(res => res.json())
   .then(users => {
     usersList.innerHTML = users.map(u => `
-      <div class="task">
-        <span>${u.username} (${u.role})</span>
-        <button onclick="deleteUser(${u.id})">🗑</button>
-      </div>
-    `).join("");
+  <div class="task">
+    <div>
+      <b>${u.username}</b><br>
+      Role: ${u.role}
+    </div>
+
+    <div>
+      <button onclick="changeRole(${u.id}, 'admin')">Admin</button>
+      <button onclick="changeRole(${u.id}, 'member')">Member</button>
+      <button onclick="deleteUser(${u.id})">🗑</button>
+    </div>
+  </div>
+`).join("");
   });
 }
+
+function changeRole(id, role) {
+  fetch(`${API_URL}/api/users/${id}/update/`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + getToken()
+    },
+    body: JSON.stringify({ role })
+  }).then(() => loadUsersList());
+}
+
 
 function createUser() {
   fetch(`${API_URL}/api/users/create/`, {
@@ -181,6 +204,19 @@ function createUser() {
       role: newRole.value,
       is_superuser: isSuperuser.checked,
       is_active: isActive.checked
+    })
+  }).then(() => loadUsersList());
+}
+
+function toggleUserStatus(id, currentStatus) {
+  fetch(`${API_URL}/api/users/${id}/update/`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + getToken()
+    },
+    body: JSON.stringify({
+      is_active: !currentStatus
     })
   }).then(() => loadUsersList());
 }
@@ -235,11 +271,14 @@ function createProject() {
 }
 
 function deleteProject(id) {
+  if (getUserRole() !== "admin") return alert("Admin only");
+
   fetch(`${API_URL}/api/projects/${id}/delete/`, {
     method: "DELETE",
     headers: { Authorization: "Bearer " + getToken() }
   }).then(() => loadProjectList());
 }
+
 
 /* ========= NAV ========= */
 function showSection(name) {

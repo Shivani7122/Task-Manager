@@ -172,6 +172,7 @@ class UserUpdateView(APIView):
 
         user.role = request.data.get("role", user.role)
         user.is_superuser = request.data.get("is_superuser", user.is_superuser)
+        user.is_active = request.data.get("is_active", user.is_active)
 
         # optional password update
         if request.data.get("password"):
