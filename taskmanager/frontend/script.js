@@ -6,15 +6,12 @@ function login() {
   const password = document.getElementById("password").value;
   const msg = document.getElementById("msg");
 
-  fetch(`${API_URL}/api/auth/login/`, {   // ✅ FIXED URL
+  fetch(`${API_URL}/api/auth/login/`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {"Content-Type": "application/json"},
     body: JSON.stringify({ username, password })
   })
-  .then(res => {
-    if (!res.ok) throw new Error("Login failed");
-    return res.json();
-  })
+  .then(res => res.json())
   .then(data => {
     if (data.access) {
       localStorage.setItem("token", data.access);
@@ -23,14 +20,11 @@ function login() {
       msg.innerText = "Invalid credentials";
     }
   })
-  .catch(err => {
-    console.error(err);
-    msg.innerText = "Server / API error";
-  });
+  .catch(() => msg.innerText = "Server error");
 }
 
 
-/* ================= COMMON AUTH ================= */
+/* ================= COMMON AUTH FETCH ================= */
 function authFetch(url, options = {}) {
   const token = localStorage.getItem("token");
 
@@ -40,9 +34,14 @@ function authFetch(url, options = {}) {
       "Content-Type": "application/json",
       Authorization: "Bearer " + token
     }
-  }).then(res => {
-    if (!res.ok) throw new Error("API error");
+  })
+  .then(res => {
+    if (!res.ok) throw new Error("API Error");
     return res.json();
+  })
+  .catch(err => {
+    console.error(err);
+    alert("API error");
   });
 }
 
@@ -57,8 +56,7 @@ function loadDashboard() {
       <div>Pending<br>${d.pending_tasks}</div>
       <div>Overdue<br>${d.overdue_tasks}</div>
     `;
-  })
-  .catch(err => console.error("Dashboard error:", err));
+  });
 }
 
 
@@ -66,50 +64,66 @@ function loadDashboard() {
 function loadTasks() {
   authFetch(`${API_URL}/api/tasks/`)
   .then(tasks => {
-    const tasksDiv = document.getElementById("tasks");
+    const div = document.getElementById("tasks");
 
-   tasksDiv.innerHTML = tasks.map(t => `
-  <div class="task-card">
-    
-    <div class="task-left">
-      <h4>${t.title}</h4>
-      <p>${t.description}</p>
-      <span class="status ${t.status}">${t.status}</span>
-    </div>
+    div.innerHTML = tasks.map(t => `
+      <div class="task-card">
+        <div class="task-left">
+          <h4>${t.title}</h4>
+          <p>${t.description}</p>
+          <span class="status ${t.status}">${t.status}</span>
+        </div>
 
-    <div class="task-actions">
-      <button onclick="updateStatus(${t.id},'done')">✔</button>
-      <button onclick="deleteTask(${t.id})">🗑</button>
-    </div>
+        <div class="task-actions">
+          <button onclick="updateStatus(${t.id},'done')">✔</button>
+          <button onclick="deleteTask(${t.id})">🗑</button>
+        </div>
+      </div>
+    `).join("");
+  });
+}
 
-  </div>
-`).join("");
-  })
-  .catch(err => console.error("Tasks error:", err));
+
+/* ================= CREATE TASK ================= */
+function createTask() {
+  authFetch(`${API_URL}/api/tasks/create/`, {
+    method: "POST",
+    body: JSON.stringify({
+      title: taskTitle.value,
+      description: taskDesc.value,
+      status: status.value,
+      assigned_to: assignedUser.value,
+      project: projectSelect.value,
+      deadline: deadline.value
+    })
+  }).then(() => {
+    loadTasks();
+    loadDashboard();
+  });
+}
+
+
+/* ================= UPDATE TASK ================= */
+function updateStatus(id, status) {
+  authFetch(`${API_URL}/api/tasks/${id}/update/`, {
+    method: "PUT",
+    body: JSON.stringify({ status })
+  }).then(() => {
+    loadTasks();
+    loadDashboard();
+  });
 }
 
 
 /* ================= DELETE TASK ================= */
 function deleteTask(id) {
-  if (!confirm("Delete this task?")) return;
+  if (!confirm("Delete task?")) return;
 
-  fetch(`${API_URL}/api/tasks/${id}/delete/`, {   // ✅ FIXED
-    method: "DELETE",
-    headers: {
-      Authorization: "Bearer " + localStorage.getItem("token")
-    }
-  })
-  .then(res => {
-    if (!res.ok) throw new Error("Delete failed");
-    return res.json();
-  })
-  .then(() => {
+  authFetch(`${API_URL}/api/tasks/${id}/delete/`, {
+    method: "DELETE"
+  }).then(() => {
     loadTasks();
     loadDashboard();
-  })
-  .catch(err => {
-    console.error(err);
-    alert("Delete failed");
   });
 }
 
@@ -117,34 +131,41 @@ function deleteTask(id) {
 /* ================= PROJECTS ================= */
 function loadProjects() {
   authFetch(`${API_URL}/api/projects/`)
-  .then(projects => {
+  .then(data => {
+    projectSelect.innerHTML = data.map(p =>
+      `<option value="${p.id}">${p.title}</option>`
+    ).join("");
 
-    // dropdown
-    document.getElementById("projectSelect").innerHTML =
-      projects.map(p => `<option value="${p.id}">${p.title}</option>`).join("");
-
-    // list
     document.getElementById("projectList").innerHTML =
-      projects.map(p => `
+      data.map(p => `
         <div class="task-card">
           ${p.title}
           <button onclick="deleteProject(${p.id})">🗑</button>
         </div>
       `).join("");
-  })
-  .catch(err => console.error("Project error:", err));
+  });
+}
+
+
+/* ================= CREATE PROJECT ================= */
+function createProject() {
+  authFetch(`${API_URL}/api/projects/create/`, {
+    method: "POST",
+    body: JSON.stringify({
+      title: projectTitle.value,
+      description: projectDesc.value
+    })
+  }).then(loadProjects);
 }
 
 
 /* ================= DELETE PROJECT ================= */
 function deleteProject(id) {
-  if (!confirm("Delete this project?")) return;
+  if (!confirm("Delete project?")) return;
 
-  authFetch(`${API_URL}/api/delete-project/${id}/`, {
+  authFetch(`${API_URL}/api/projects/${id}/delete/`, {
     method: "DELETE"
-  })
-  .then(loadProjects)
-  .catch(err => console.error("Delete project error:", err));
+  }).then(loadProjects);
 }
 
 
@@ -152,64 +173,70 @@ function deleteProject(id) {
 function loadUsers() {
   authFetch(`${API_URL}/api/users/`)
   .then(users => {
-    document.getElementById("assignedUser").innerHTML =
-      users.map(u => `<option value="${u.id}">${u.username}</option>`).join("");
-  })
-  .catch(err => console.error("User error:", err));
+    assignedUser.innerHTML = users.map(u =>
+      `<option value="${u.id}">${u.username}</option>`
+    ).join("");
+
+    document.getElementById("userList").innerHTML =
+      users.map(u => `
+        <div class="task-card">
+          <div>
+            <b>${u.username}</b><br>
+            Role: ${u.role} | Superuser: ${u.is_superuser}
+          </div>
+
+          <div>
+            <button onclick="makeAdmin(${u.id})">Admin</button>
+            <button onclick="deleteUser(${u.id})">🗑</button>
+          </div>
+        </div>
+      `).join("");
+  });
 }
 
 
-/* ================= CREATE TASK ================= */
-function createTask() {
-  authFetch(`${API_URL}/api/tasks/create/`, {   // ✅ FIXED URL
+/* ================= CREATE USER ================= */
+function createUser() {
+  authFetch(`${API_URL}/api/users/create/`, {
     method: "POST",
     body: JSON.stringify({
-      title: document.getElementById("taskTitle").value,
-      description: document.getElementById("taskDesc").value,
-      status: document.getElementById("status").value,
-      assigned_to: document.getElementById("assignedUser").value,
-      project: document.getElementById("projectSelect").value,
-      deadline: document.getElementById("deadline").value
+      username: newUsername.value,
+      password: newPassword.value,
+      role: newRole.value,
+      is_superuser: isSuperuser.checked
     })
-  })
-  .then(() => {
-    loadTasks();
-    loadDashboard();
-  })
-  .catch(err => console.error("Create task error:", err));
+  }).then(loadUsers);
 }
 
 
-/* ================= CREATE PROJECT ================= */
-function createProject() {
-  authFetch(`${API_URL}/api/projects/create/`, {   // ✅ FIXED URL
-    method: "POST",
-    body: JSON.stringify({
-      title: document.getElementById("projectTitle").value,
-      description: document.getElementById("projectDesc").value
-    })
-  })
-  .then(loadProjects)
-  .catch(err => console.error("Create project error:", err));
-}
-
-
-/* ================= UPDATE STATUS ================= */
-function updateStatus(id, status) {
-  authFetch(`${API_URL}/api/tasks/${id}/update/`, {   // ✅ FIXED URL
+/* ================= UPDATE USER ================= */
+function makeAdmin(id) {
+  authFetch(`${API_URL}/api/users/${id}/update/`, {
     method: "PUT",
-    body: JSON.stringify({ status })
-  })
-  .then(loadTasks)
-  .catch(err => console.error("Update error:", err));
+    body: JSON.stringify({
+      role: "admin",
+      is_superuser: true
+    })
+  }).then(loadUsers);
+}
+
+
+/* ================= DELETE USER ================= */
+function deleteUser(id) {
+  if (!confirm("Delete user?")) return;
+
+  authFetch(`${API_URL}/api/users/${id}/delete/`, {
+    method: "DELETE"
+  }).then(loadUsers);
 }
 
 
 /* ================= NAVIGATION ================= */
 function showSection(name) {
-  document.getElementById("dashboardSection").style.display = name === "dashboard" ? "block" : "none";
-  document.getElementById("projectSection").style.display = name === "projects" ? "block" : "none";
-  document.getElementById("taskSection").style.display = name === "tasks" ? "block" : "none";
+  document.getElementById("dashboardSection").style.display = name==="dashboard"?"block":"none";
+  document.getElementById("projectSection").style.display = name==="projects"?"block":"none";
+  document.getElementById("taskSection").style.display = name==="tasks"?"block":"none";
+  document.getElementById("userSection").style.display = name==="users"?"block":"none";
 }
 
 

@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
+from django.contrib.auth.hashers import make_password
 from .models import Project, Task, User
 from .serializers import ProjectSerializer, TaskSerializer, UserSerializer
 from datetime import date
@@ -94,15 +95,16 @@ class TaskUpdateView(APIView):
         except Task.DoesNotExist:
             return Response({"error": "Task not found"}, status=404)
 
+        # member → only own task
         if request.user != task.assigned_to and request.user.role != "admin":
             return Response({"error": "Not allowed"}, status=403)
 
-        status_value = request.data.get("status")
+        new_status = request.data.get("status")
 
-        if status_value not in ["pending", "in_progress", "done"]:
+        if new_status not in ["pending", "in_progress", "done"]:
             return Response({"error": "Invalid status"}, status=400)
 
-        task.status = status_value
+        task.status = new_status
         task.save()
 
         return Response({"message": "Task updated"})
@@ -131,6 +133,68 @@ class UserListView(APIView):
     def get(self, request):
         users = User.objects.all()
         return Response(UserSerializer(users, many=True).data)
+
+
+class UserCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        if request.user.role != "admin":
+            return Response({"error": "Only admin can create users"}, status=403)
+
+        data = request.data
+
+        if User.objects.filter(username=data.get("username")).exists():
+            return Response({"error": "Username already exists"}, status=400)
+
+        user = User.objects.create(
+            username=data.get("username"),
+            password=make_password(data.get("password")),
+            role=data.get("role", "member"),
+            is_superuser=data.get("is_superuser", False),
+            is_staff=True
+        )
+
+        return Response({"message": "User created"})
+
+
+class UserUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, pk):
+        if request.user.role != "admin":
+            return Response({"error": "Only admin can update users"}, status=403)
+
+        try:
+            user = User.objects.get(id=pk)
+        except:
+            return Response({"error": "User not found"}, status=404)
+
+        user.role = request.data.get("role", user.role)
+        user.is_superuser = request.data.get("is_superuser", user.is_superuser)
+
+        # optional password update
+        if request.data.get("password"):
+            user.password = make_password(request.data.get("password"))
+
+        user.save()
+
+        return Response({"message": "User updated"})
+
+
+class UserDeleteView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, pk):
+        if request.user.role != "admin":
+            return Response({"error": "Only admin can delete users"}, status=403)
+
+        try:
+            user = User.objects.get(id=pk)
+            user.delete()
+            return Response({"message": "User deleted"})
+        except:
+            return Response({"error": "User not found"}, status=404)
 
 
 # ================= DASHBOARD =================
