@@ -207,20 +207,25 @@ function loadUsersList() {
   .then(res => res.json())
   .then(users => {
 
+    if (!users.length) {
+      usersList.innerHTML = "<p>No users found</p>";
+      return;
+    }
+
     usersList.innerHTML = users.map(u => `
       <div class="user-card">
 
         <div>
           <b>${u.username}</b>
           <p>Role: ${u.role}</p>
-          <p>Status: ${u.is_active ? "Active" : "Inactive"}</p>
+          <p>${u.is_active ? "Active" : "Inactive"}</p>
         </div>
 
         <div class="user-actions">
-          <button onclick="changeRole(${u.id}, 'admin')">Make Admin</button>
-          <button onclick="changeRole(${u.id}, 'member')">Make Member</button>
+          <button onclick="changeRole(${u.id}, 'admin')">Admin</button>
+          <button onclick="changeRole(${u.id}, 'member')">Member</button>
           <button onclick="toggleUserStatus(${u.id}, ${u.is_active})">
-            ${u.is_active ? "Deactivate" : "Activate"}
+            ${u.is_active ? "Disable" : "Enable"}
           </button>
           <button class="danger" onclick="deleteUser(${u.id})">Delete</button>
         </div>
@@ -228,6 +233,9 @@ function loadUsersList() {
       </div>
     `).join("");
 
+  })
+  .catch(() => {
+    usersList.innerHTML = "<p>Error loading users</p>";
   });
 }
 

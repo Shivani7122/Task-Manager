@@ -1,27 +1,32 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Login</title>
+  <meta charset="UTF-8">
+  <title>Login | Task Manager</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body class="login-page">
 
-  <div class="login-card">
-    
-    <h2>🔐 Task Manager</h2>
-    <p class="subtitle">Login to continue</p>
+  <div class="login-wrapper">
 
-    <input id="username" placeholder="Username">
-    <input id="password" type="password" placeholder="Password">
+    <div class="login-card">
+      
+      <h2>🔐 Task Manager</h2>
+      <p class="subtitle">Login to continue</p>
 
-    <button onclick="login()">Login</button>
+      <input id="username" placeholder="Username">
+      <input id="password" type="password" placeholder="Password">
 
-    <p id="msg"></p>
+      <button onclick="login()">Login</button>
+
+      <p id="msg"></p>
+
+    </div>
 
   </div>
 
-<script src="script.js"></script>
+  <script src="script.js"></script>
 
 </body>
 </html>
