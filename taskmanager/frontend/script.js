@@ -1,4 +1,4 @@
-const API_URL = "hhttps://worthy-dream-production-a5ca.up.railway.app/";
+const API_URL = "hhttps://worthy-dream-production-a5ca.up.railway.app";
 
 /* ================= LOGIN ================= */
 function login() {

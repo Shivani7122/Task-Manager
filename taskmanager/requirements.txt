@@ -1,7 +1,7 @@
 django
 djangorestframework
 pymysql
-cryptography"
+cryptography
 python-dotenv
 gunicorn
 whitenoise
