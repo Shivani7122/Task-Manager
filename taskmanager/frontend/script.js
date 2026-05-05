@@ -13,25 +13,29 @@ function login() {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      username: username,
-      password: password
+      username,
+      password
     })
   })
-  .then(res => res.json())
-  .then(data => {
+  .then(async res => {
+    const data = await res.json();
 
-    if (data.access) {
+    console.log("LOGIN RESPONSE:", data);
+
+    if (res.ok && data.access) {
       localStorage.setItem("token", data.access);
 
-      // 🔥 IMPORTANT FIX (ADD THIS LINE)
-      localStorage.setItem("user_id", 1); // 👈 temporarily admin id
+      // TEMP FIX (admin id)
+      localStorage.setItem("user_id", 1);
 
       window.location.href = "dashboard.html";
     } else {
-      document.getElementById("msg").innerText = "Invalid login";
+      document.getElementById("msg").innerText =
+        data.detail || "Invalid credentials";
     }
   })
-  .catch(() => {
+  .catch(err => {
+    console.error("LOGIN ERROR:", err);
     document.getElementById("msg").innerText = "Server error";
   });
 }
