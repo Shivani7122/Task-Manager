@@ -385,7 +385,6 @@ function authHeader() {
 
 /* ================= NAV ================= */
 function showSection(name) {
-
   const sections = {
     dashboard: "dashboardSection",
     projects: "projectSection",
@@ -395,11 +394,13 @@ function showSection(name) {
 
   // hide all
   Object.values(sections).forEach(id => {
-    document.getElementById(id).style.display = "none";
+    const el = document.getElementById(id);
+    if (el) el.style.display = "none";
   });
 
   // show selected
-  document.getElementById(sections[name]).style.display = "block";
+  const active = document.getElementById(sections[name]);
+  if (active) active.style.display = "block";
 }
 
 /* ================= LOGOUT ================= */
