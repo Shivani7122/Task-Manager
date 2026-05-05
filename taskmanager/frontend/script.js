@@ -215,25 +215,25 @@ function createProject() {
     body: JSON.stringify({
       title: title,
       description: description
-      // ❗ created_by backend automatically ले रहा है request.user से
     })
   })
-  .then(res => {
-    if (!res.ok) throw new Error("Failed to create project");
-    return res.json();
+  .then(async res => {
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error("ERROR:", data);
+      throw new Error(JSON.stringify(data));
+    }
+
+    return data;
   })
-  .then(data => {
+  .then(() => {
     alert("Project created ✅");
-
-    // clear fields
-    document.getElementById("projectTitle").value = "";
-    document.getElementById("projectDesc").value = "";
-
-    loadProjects(); // 🔥 refresh list
+    loadProjects();
   })
   .catch(err => {
-    console.error("PROJECT ERROR:", err);
-    alert("Error creating project ❌");
+    console.error("CREATE ERROR:", err);
+    alert("Backend error — check console ❌");
   });
 }
 /* DELETE PROJECT */
