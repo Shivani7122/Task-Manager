@@ -2,29 +2,28 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
-
 from .models import Project, Task, User
 from .serializers import ProjectSerializer, TaskSerializer, UserSerializer
 from datetime import date
 
 
-# 🔹 Create Project (Admin only)
+# ================= PROJECT =================
+
 class ProjectCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        if request.user.role != 'admin':
-            return Response({"error": "Only admin can create project"}, status=status.HTTP_403_FORBIDDEN)
+        if request.user.role != "admin":
+            return Response({"error": "Only admin can create project"}, status=403)
 
         serializer = ProjectSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(created_by=request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.data)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=400)
 
 
-# 🔹 Get Projects
 class ProjectListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -33,34 +32,59 @@ class ProjectListView(APIView):
         return Response(ProjectSerializer(projects, many=True).data)
 
 
-# 🔹 Create Task (Admin only)
+class ProjectDeleteView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, pk):
+        if request.user.role != "admin":
+            return Response({"error": "Only admin can delete project"}, status=403)
+
+        try:
+            project = Project.objects.get(id=pk)
+            project.delete()
+            return Response({"message": "Project deleted"})
+        except Project.DoesNotExist:
+            return Response({"error": "Project not found"}, status=404)
+
+
+# ================= TASK =================
+
 class TaskCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        if request.user.role != 'admin':
-            return Response({"error": "Only admin can assign tasks"}, status=status.HTTP_403_FORBIDDEN)
-
-        assigned_to = request.data.get("assigned_to")
-        project_id = request.data.get("project")
+        if request.user.role != "admin":
+            return Response({"error": "Only admin can assign tasks"}, status=403)
 
         try:
-            assigned_user = User.objects.get(id=assigned_to)
-            project = Project.objects.get(id=project_id)
-        except User.DoesNotExist:
-            return Response({"error": "User not found"}, status=400)
-        except Project.DoesNotExist:
-            return Response({"error": "Project not found"}, status=400)
+            assigned_user = User.objects.get(id=request.data.get("assigned_to"))
+            project = Project.objects.get(id=request.data.get("project"))
+        except:
+            return Response({"error": "Invalid user or project"}, status=400)
 
         serializer = TaskSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(assigned_to=assigned_user, project=project)
-            return Response(serializer.data, status=201)
+            serializer.save(
+                assigned_to=assigned_user,
+                project=project
+            )
+            return Response(serializer.data)
 
         return Response(serializer.errors, status=400)
 
 
-# 🔹 Update Task (Member only)
+class TaskListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if request.user.role == "admin":
+            tasks = Task.objects.all()
+        else:
+            tasks = Task.objects.filter(assigned_to=request.user)
+
+        return Response(TaskSerializer(tasks, many=True).data)
+
+
 class TaskUpdateView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -70,53 +94,37 @@ class TaskUpdateView(APIView):
         except Task.DoesNotExist:
             return Response({"error": "Task not found"}, status=404)
 
-        if request.user != task.assigned_to:
+        if request.user != task.assigned_to and request.user.role != "admin":
             return Response({"error": "Not allowed"}, status=403)
 
-        new_status = request.data.get("status")
+        status_value = request.data.get("status")
 
-        valid_status = dict(Task.STATUS_CHOICES).keys()
-        if new_status not in valid_status:
+        if status_value not in ["pending", "in_progress", "done"]:
             return Response({"error": "Invalid status"}, status=400)
 
-        task.status = new_status
+        task.status = status_value
         task.save()
 
         return Response({"message": "Task updated"})
 
 
-# 🔹 Get Tasks
-class TaskListView(APIView):
+class TaskDeleteView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        if request.user.role == 'admin':
-            tasks = Task.objects.all()
-        else:
-            tasks = Task.objects.filter(assigned_to=request.user)
+    def delete(self, request, pk):
+        if request.user.role != "admin":
+            return Response({"error": "Only admin can delete task"}, status=403)
 
-        return Response(TaskSerializer(tasks, many=True).data)
-
-
-# 🔹 Dashboard
-class DashboardView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        if request.user.role == 'admin':
-            tasks = Task.objects.all()
-        else:
-            tasks = Task.objects.filter(assigned_to=request.user)
-
-        return Response({
-            "total_tasks": tasks.count(),
-            "completed_tasks": tasks.filter(status='done').count(),
-            "pending_tasks": tasks.filter(status='pending').count(),
-            "overdue_tasks": tasks.filter(deadline__lt=date.today()).exclude(status='done').count()
-        })
+        try:
+            task = Task.objects.get(id=pk)
+            task.delete()
+            return Response({"message": "Task deleted"})
+        except Task.DoesNotExist:
+            return Response({"error": "Task not found"}, status=404)
 
 
-# 🔹 Users API (Dropdown)
+# ================= USERS =================
+
 class UserListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -124,27 +132,22 @@ class UserListView(APIView):
         users = User.objects.all()
         return Response(UserSerializer(users, many=True).data)
 
-class TaskDeleteView(APIView):
+
+# ================= DASHBOARD =================
+
+class DashboardView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def delete(self, request, pk):
-        try:
-            task = Task.objects.get(id=pk)
-        except Task.DoesNotExist:
-            return Response({"error": "Not found"}, status=404)
+    def get(self, request):
 
-        if request.user.role != "admin":
-            return Response({"error": "Only admin can delete"}, status=403)
+        if request.user.role == "admin":
+            tasks = Task.objects.all()
+        else:
+            tasks = Task.objects.filter(assigned_to=request.user)
 
-        task.delete()
-        return Response({"message": "Deleted"})
-
-class ProjectDeleteView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def delete(self, request, pk):
-        if request.user.role != "admin":
-            return Response({"error": "Only admin"}, status=403)
-
-        Project.objects.filter(id=pk).delete()
-        return Response({"message": "Deleted"})
+        return Response({
+            "total_tasks": tasks.count(),
+            "completed_tasks": tasks.filter(status="done").count(),
+            "pending_tasks": tasks.filter(status="pending").count(),
+            "overdue_tasks": tasks.filter(deadline__lt=date.today()).exclude(status="done").count()
+        })
