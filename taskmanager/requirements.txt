@@ -1,9 +1,7 @@
 django
 djangorestframework
-django-cors-headers
-djangorestframework-simplejwt
-gunicorn
-cryptography
 pymysql
+cryptography
 dj-database-url
 python-dotenv
+gunicorn
