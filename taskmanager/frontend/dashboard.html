@@ -8,19 +8,16 @@
 <body>
 
 <div class="app-wrapper">
-
   <div class="container">
 
     <!-- Sidebar -->
     <div class="sidebar">
       <h2>⚡ TaskApp</h2>
-
       <button onclick="showSection('dashboard')">Dashboard</button>
       <button onclick="showSection('projects')">Projects</button>
       <button onclick="showSection('tasks')">Tasks</button>
       <button onclick="showSection('users')">Users</button>
-
-      <button onclick="logout()" class="logout-btn">Logout</button>
+      <button onclick="logout()">Logout</button>
     </div>
 
     <!-- Main -->
@@ -34,74 +31,61 @@
 
       <!-- PROJECT -->
       <div id="projectSection" class="card" style="display:none;">
-        <h3>Create Project</h3>
+        <h3>Create Project (Admin)</h3>
 
-        <div class="form-row">
-          <input id="projectTitle" placeholder="Project title">
-          <input id="projectDesc" placeholder="Description">
-          <button onclick="createProject()">Create</button>
-        </div>
+        <input id="projectTitle" placeholder="Project title">
+        <input id="projectDesc" placeholder="Description">
 
-        <h4>Projects</h4>
+        <button onclick="createProject()">Create</button>
+
+        <h4>Project List</h4>
         <div id="projectList"></div>
       </div>
 
       <!-- TASK -->
       <div id="taskSection" class="card" style="display:none;">
-        <h3>Create Task</h3>
+        <h3>Create Task (Admin)</h3>
 
-        <div class="form-grid">
-          <input id="taskTitle" placeholder="Title">
-          <input id="taskDesc" placeholder="Description">
+        <input id="taskTitle" placeholder="Title">
+        <input id="taskDesc" placeholder="Description">
 
-          <select id="status">
-            <option value="pending">Pending</option>
-            <option value="in_progress">In Progress</option>
-            <option value="done">Done</option>
-          </select>
+        <select id="status">
+          <option value="pending">Pending</option>
+          <option value="in_progress">In Progress</option>
+          <option value="done">Done</option>
+        </select>
 
-          <select id="assignedUser"></select>
-          <select id="projectSelect"></select>
+        <select id="assignedUser"></select>
+        <select id="projectSelect"></select>
 
-          <input type="date" id="deadline">
-        </div>
+        <input type="date" id="deadline">
 
         <button onclick="createTask()">Create Task</button>
 
-        <h3 style="margin-top:20px;">Tasks</h3>
-        <div id="tasks"></div>
+        <h3>Task List</h3>
+        <div id="tasksDiv"></div>
       </div>
 
       <!-- USERS -->
       <div id="userSection" class="card" style="display:none;">
         <h3>Users (Admin)</h3>
 
-        <div class="form-grid">
-          <input id="newUsername" placeholder="Username">
-          <input id="newPassword" placeholder="Password">
+        <input id="newUsername" placeholder="Username">
+        <input id="newPassword" placeholder="Password">
 
-          <select id="newRole">
-            <option value="member">Member</option>
-            <option value="admin">Admin</option>
-          </select>
-        </div>
+        <select id="newRole">
+          <option value="member">Member</option>
+          <option value="admin">Admin</option>
+        </select>
 
-        <!-- FIXED CHECKBOX ALIGNMENT -->
         <div class="checkbox-row">
-          <label>
-            <input type="checkbox" id="isSuperuser">
-            Superuser
-          </label>
-
-          <label>
-            <input type="checkbox" id="isActive" checked>
-            Active
-          </label>
+          <label><input type="checkbox" id="isSuperuser"> Superuser</label>
+          <label><input type="checkbox" id="isActive" checked> Active</label>
         </div>
 
         <button onclick="createUser()">Add User</button>
 
-        <h4 style="margin-top:20px;">User List</h4>
+        <h4>User List</h4>
         <div id="usersList"></div>
       </div>
 
@@ -110,11 +94,8 @@
 </div>
 
 <script src="script.js"></script>
-
 <script>
-document.addEventListener("DOMContentLoaded", () => {
   initApp();
-});
 </script>
 
 </body>
