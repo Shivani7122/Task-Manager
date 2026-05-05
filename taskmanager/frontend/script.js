@@ -68,20 +68,22 @@ function loadTasks() {
   .then(tasks => {
     const tasksDiv = document.getElementById("tasks");
 
-    tasksDiv.innerHTML = tasks.map(t => `
-      <div class="task-card">
-        <div>
-          <b>${t.title}</b><br>
-          <small>${t.description}</small><br>
-          <span class="${t.status}">${t.status}</span>
-        </div>
+   tasksDiv.innerHTML = tasks.map(t => `
+  <div class="task-card">
+    
+    <div class="task-left">
+      <h4>${t.title}</h4>
+      <p>${t.description}</p>
+      <span class="status ${t.status}">${t.status}</span>
+    </div>
 
-        <div>
-          <button onclick="updateStatus(${t.id},'done')">✔</button>
-          <button onclick="deleteTask(${t.id})">🗑</button>
-        </div>
-      </div>
-    `).join("");
+    <div class="task-actions">
+      <button onclick="updateStatus(${t.id},'done')">✔</button>
+      <button onclick="deleteTask(${t.id})">🗑</button>
+    </div>
+
+  </div>
+`).join("");
   })
   .catch(err => console.error("Tasks error:", err));
 }
@@ -91,14 +93,24 @@ function loadTasks() {
 function deleteTask(id) {
   if (!confirm("Delete this task?")) return;
 
-  authFetch(`${API_URL}/api/delete-task/${id}/`, {
-    method: "DELETE"
+  fetch(`${API_URL}/api/tasks/${id}/delete/`, {   // ✅ FIXED
+    method: "DELETE",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("token")
+    }
+  })
+  .then(res => {
+    if (!res.ok) throw new Error("Delete failed");
+    return res.json();
   })
   .then(() => {
     loadTasks();
     loadDashboard();
   })
-  .catch(err => console.error("Delete error:", err));
+  .catch(err => {
+    console.error(err);
+    alert("Delete failed");
+  });
 }
 
 
