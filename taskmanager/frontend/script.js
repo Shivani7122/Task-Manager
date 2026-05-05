@@ -1,6 +1,5 @@
-const API_URL = "https://vigilant-guide-q7px6w69r7rh4q7g-5502.app.github.dev";
+const API_URL = "https://vigilant-guide-q7px6w69r7rh4q7g-8000.app.github.dev"; // ⚠️ backend port
 
-/* ================= LOGIN ================= */
 function login() {
   const username = document.getElementById("username").value.trim();
   const password = document.getElementById("password").value.trim();
@@ -16,39 +15,49 @@ function login() {
   btn.innerHTML = "Loading...";
   btn.disabled = true;
 
-  fetch(`${API_URL}/api/auth/login/`, {
+  fetch(`${API_URL}/api/login/`, {   // ✅ FIXED ENDPOINT
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password })
   })
-    .then(res => res.json())
+    .then(res => {
+      if (!res.ok) throw new Error("Login failed");
+      return res.json();
+    })
     .then(data => {
+
       if (!data.access) {
         msg.innerText = "Invalid credentials ❌";
         return;
       }
 
+      localStorage.setItem("token", data.access);
+
       return fetch(`${API_URL}/api/users/`, {
-        headers: { Authorization: "Bearer " + data.access }
-      })
-        .then(res => res.json())
-        .then(users => {
-          const user = users.find(u => u.username === username);
-
-          if (!user) {
-            msg.innerText = "User not found ❌";
-            return;
-          }
-
-          // 🔥 store role lowercase for consistency
-          localStorage.setItem("token", data.access);
-          localStorage.setItem("role", user.role.toLowerCase());
-          localStorage.setItem("user_id", user.id);
-
-          window.location.href = "dashboard.html";
-        });
+        headers: {
+          "Authorization": "Bearer " + data.access
+        }
+      });
     })
-    .catch(() => msg.innerText = "Server error ❌")
+    .then(res => res.json())
+    .then(users => {
+
+      const user = users.find(u => u.username === username);
+
+      if (!user) {
+        msg.innerText = "User not found ❌";
+        return;
+      }
+
+      localStorage.setItem("role", user.role.toLowerCase());
+      localStorage.setItem("user_id", user.id);
+
+      window.location.href = "dashboard.html";
+    })
+    .catch(err => {
+      console.error(err);
+      msg.innerText = "Server error ❌";
+    })
     .finally(() => {
       btn.innerHTML = "Login";
       btn.disabled = false;
