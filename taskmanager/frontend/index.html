@@ -13,9 +13,18 @@
       <h2>🔐 Task Manager</h2>
       <p class="subtitle">Login to continue</p>
 
-      <!-- ✅ FIXED IDS -->
       <input id="username" placeholder="Username">
       <input id="password" type="password" placeholder="Password">
+
+      <!-- ✅ ROLE RADIO -->
+      <div class="role-select">
+        <label>
+          <input type="radio" name="role" value="admin"> Admin
+        </label>
+        <label>
+          <input type="radio" name="role" value="member" checked> Member
+        </label>
+      </div>
 
       <button onclick="login()">Login</button>
 
@@ -23,8 +32,7 @@
 
     </div>
   </div>
-  
-  <script src="script.js"></script>
 
+  <script src="script.js"></script>
 </body>
 </html>

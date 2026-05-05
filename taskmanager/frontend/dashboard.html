@@ -10,42 +10,54 @@
 <div class="app-wrapper">
   <div class="container">
 
-    <!-- Sidebar -->
+    <!-- 🔥 SIDEBAR -->
     <div class="sidebar">
       <h2>⚡ TaskApp</h2>
-      <button onclick="showSection('dashboard')">Dashboard</button>
-      <button onclick="showSection('projects')">Projects</button>
-      <button onclick="showSection('tasks')">Tasks</button>
-      <button onclick="showSection('users')">Users</button>
-      <button onclick="logout()">Logout</button>
+
+      <button id="btnDashboard" onclick="showSection('dashboard')">📊 Dashboard</button>
+      <button id="btnProjects" onclick="showSection('projects')">📁 Projects</button>
+      <button id="btnTasks" onclick="showSection('tasks')">✅ Tasks</button>
+      <button id="btnUsers" onclick="showSection('users')">👤 Users</button>
+
+      <hr style="opacity:0.2; margin:15px 0;">
+
+      <button onclick="logout()">🚪 Logout</button>
     </div>
 
-    <!-- Main -->
+    <!-- 🔥 MAIN -->
     <div class="main">
 
-      <!-- DASHBOARD -->
-      <div id="dashboardSection" class="card">
-        <h3>Dashboard</h3>
-        <div id="dashboard" class="grid"></div>
+      <!-- 🔹 HEADER -->
+      <div class="card">
+        <h2 id="welcomeText">Welcome 👋</h2>
+        <p style="opacity:0.7">Manage your tasks efficiently</p>
       </div>
 
-      <!-- PROJECT -->
+      <!-- 🔹 DASHBOARD -->
+      <div id="dashboardSection" class="card">
+        <h3>📊 Dashboard Overview</h3>
+        <div id="dashboard" class="grid">
+          <div class="loader"></div>
+        </div>
+      </div>
+
+      <!-- 🔹 PROJECT -->
       <div id="projectSection" class="card" style="display:none;">
-        <h3>Create Project (Admin)</h3>
+        <h3>📁 Create Project</h3>
 
         <input id="projectTitle" placeholder="Project title">
         <input id="projectDesc" placeholder="Description">
         <select id="createdBySelect"></select>
 
-        <button onclick="createProject()">Create</button>
+        <button onclick="createProject()">➕ Create Project</button>
 
-        <h4>Project List</h4>
+        <h4 style="margin-top:20px;">Project List</h4>
         <div id="projectList"></div>
       </div>
 
-      <!-- TASK -->
+      <!-- 🔹 TASK -->
       <div id="taskSection" class="card" style="display:none;">
-        <h3>Create Task (Admin)</h3>
+        <h3>✅ Create Task</h3>
 
         <input id="taskTitle" placeholder="Title">
         <input id="taskDesc" placeholder="Description">
@@ -61,15 +73,15 @@
 
         <input type="date" id="deadline">
 
-        <button onclick="createTask()">Create Task</button>
+        <button onclick="createTask()">➕ Create Task</button>
 
-        <h3>Task List</h3>
+        <h3 style="margin-top:20px;">Task List</h3>
         <div id="tasksDiv"></div>
       </div>
 
-      <!-- USERS -->
+      <!-- 🔹 USERS -->
       <div id="userSection" class="card" style="display:none;">
-        <h3>Users (Admin)</h3>
+        <h3>👤 Manage Users</h3>
 
         <input id="newUsername" placeholder="Username">
         <input id="newPassword" placeholder="Password">
@@ -84,9 +96,9 @@
           <label><input type="checkbox" id="isActive" checked> Active</label>
         </div>
 
-        <button onclick="createUser()">Add User</button>
+        <button onclick="createUser()">➕ Add User</button>
 
-        <h4>User List</h4>
+        <h4 style="margin-top:20px;">User List</h4>
         <div id="usersList"></div>
       </div>
 
@@ -95,8 +107,27 @@
 </div>
 
 <script src="script.js"></script>
+
 <script>
   initApp();
+
+  // 🔥 Sidebar active highlight
+  function setActive(btnId) {
+    document.querySelectorAll(".sidebar button").forEach(b => b.classList.remove("active"));
+    document.getElementById(btnId).classList.add("active");
+  }
+
+  function showSection(name) {
+    dashboardSection.style.display = name === "dashboard" ? "block" : "none";
+    projectSection.style.display = name === "projects" ? "block" : "none";
+    taskSection.style.display = name === "tasks" ? "block" : "none";
+    userSection.style.display = name === "users" ? "block" : "none";
+
+    if (name === "dashboard") setActive("btnDashboard");
+    if (name === "projects") setActive("btnProjects");
+    if (name === "tasks") setActive("btnTasks");
+    if (name === "users") setActive("btnUsers");
+  }
 </script>
 
 </body>

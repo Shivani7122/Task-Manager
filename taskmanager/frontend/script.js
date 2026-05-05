@@ -1,25 +1,21 @@
 const API_URL = "https://vigilant-guide-q7px6w69r7rh4q7g-8000.app.github.dev";
 
-let currentUser = null;
-
-/* LOGIN */
+/* ================= LOGIN ================= */
 function login() {
-  const usernameEl = document.getElementById("username");
-  const passwordEl = document.getElementById("password");
+  const username = document.getElementById("username").value.trim();
+  const password = document.getElementById("password").value.trim();
+  const role = document.querySelector('input[name="role"]:checked').value;
   const msg = document.getElementById("msg");
-
-  if (!usernameEl || !passwordEl) {
-    console.error("❌ Input fields not found");
-    return;
-  }
-
-  const username = usernameEl.value.trim();
-  const password = passwordEl.value.trim();
+  const btn = document.querySelector("button");
 
   if (!username || !password) {
     msg.innerText = "Enter username & password";
     return;
   }
+
+  // 🔄 Loader ON
+  btn.innerHTML = "Loading...";
+  btn.disabled = true;
 
   fetch(`${API_URL}/api/auth/login/`, {
     method: "POST",
@@ -28,56 +24,81 @@ function login() {
     },
     body: JSON.stringify({ username, password })
   })
-  .then(async res => {
-    const data = await res.json();
-    console.log("LOGIN RESPONSE:", data);
+    .then(async res => {
+      const data = await res.json();
 
-    if (res.ok && data.access) {
-      localStorage.setItem("token", data.access);
+      if (res.ok && data.access) {
 
-      // 🔥 IMPORTANT: USER FETCH करो
-      fetch(`${API_URL}/api/users/`, {
-        headers: {
-          Authorization: "Bearer " + data.access
-        }
-      })
-      .then(res => res.json())
-      .then(users => {
-        const user = users.find(u => u.username === username);
+        // 🔥 Fetch user details
+        fetch(`${API_URL}/api/users/`, {
+          headers: {
+            Authorization: "Bearer " + data.access
+          }
+        })
+          .then(res => res.json())
+          .then(users => {
+            const user = users.find(u => u.username === username);
 
-        if (user) {
-          localStorage.setItem("user_id", user.id);
-          localStorage.setItem("role", user.role);
-        }
+            if (!user) {
+              msg.innerText = "User not found";
+              return;
+            }
 
-        window.location.href = "dashboard.html";
-      });
+            // 🔐 Role check
+            if (user.role !== role) {
+              msg.innerText = "Wrong role selected ❌";
+              return;
+            }
 
-    } else {
-      msg.innerText = data.detail || "Invalid credentials";
-    }
-  })
-  .catch(err => {
-    console.error("LOGIN ERROR:", err);
-    msg.innerText = "Server error";
-  });
+            // ✅ Save
+            localStorage.setItem("token", data.access);
+            localStorage.setItem("role", user.role);
+            localStorage.setItem("user_id", user.id);
+
+            window.location.href = "dashboard.html";
+          });
+
+      } else {
+        msg.innerText = data.detail || "Invalid credentials";
+      }
+    })
+    .catch(() => {
+      msg.innerText = "Server error";
+    })
+    .finally(() => {
+      // 🔄 Loader OFF
+      btn.innerHTML = "Login";
+      btn.disabled = false;
+    });
 }
 
-/* INIT */
+/* ================= INIT ================= */
 function initApp() {
-  if (!localStorage.getItem("token")) {
+  const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
+
+  if (!token) {
     window.location.href = "index.html";
     return;
   }
 
-  loadUsers();      // 🔥 IMPORTANT
+  // 🔥 Role-based UI
+  if (role !== "admin") {
+    document.getElementById("projectSection").style.display = "none";
+    document.getElementById("userSection").style.display = "none";
+  }
+
+  loadUsers();
   loadProjects();
   loadTasks();
   loadDashboard();
 }
 
-/* DASHBOARD */
+/* ================= DASHBOARD ================= */
 function loadDashboard() {
+  document.getElementById("dashboard").innerHTML =
+    `<div class="loader"></div>`;
+
   fetch(`${API_URL}/api/dashboard/`, {
     headers: authHeader()
   })
@@ -91,74 +112,58 @@ function loadDashboard() {
     });
 }
 
-/* USERS */
+/* ================= USERS ================= */
 function loadUsers() {
   fetch(`${API_URL}/api/users/`, {
     headers: authHeader()
   })
-  .then(res => res.json())
-  .then(users => {
-    console.log("USERS:", users);
+    .then(res => res.json())
+    .then(users => {
 
-    // 🔽 DROPDOWN (Assigned To)
-    const dropdown = document.getElementById("assignedUser");
-    if (dropdown) {
-      dropdown.innerHTML = users.map(u =>
-        `<option value="${u.id}">${u.username}</option>`
-      ).join("");
-    }
+      // dropdown
+      const dropdown = document.getElementById("assignedUser");
+      if (dropdown) {
+        dropdown.innerHTML = users.map(u =>
+          `<option value="${u.id}">${u.username}</option>`
+        ).join("");
+      }
 
-    // 🔽 USER LIST (Admin panel)
-    const list = document.getElementById("usersList");
-    if (list) {
-      list.innerHTML = users.map(u => `
-        <div class="card-item">
-          <div>
-            <b>${u.username}</b> (${u.role})
-            <br>
-            Active: ${u.is_active ? "Yes" : "No"} |
-            Superuser: ${u.is_superuser ? "Yes" : "No"}
-          </div>
-
-          <div>
+      // user list
+      const list = document.getElementById("usersList");
+      if (list) {
+        list.innerHTML = users.map(u => `
+          <div class="card-item">
+            <div>
+              <b>${u.username}</b> (${u.role})<br>
+              Active: ${u.is_active ? "Yes" : "No"} |
+              Superuser: ${u.is_superuser ? "Yes" : "No"}
+            </div>
             <button onclick="deleteUser(${u.id})">❌</button>
           </div>
-        </div>
-      `).join("");
-    }
-  })
-  .catch(err => console.error("USER LOAD ERROR:", err));
+        `).join("");
+      }
+    });
 }
 
-/* PROJECTS */
+/* ================= PROJECT ================= */
 function loadProjects() {
   fetch(`${API_URL}/api/projects/`, {
-    headers: {
-      Authorization: "Bearer " + localStorage.getItem("token")
-    }
+    headers: authHeader()
   })
-  .then(res => res.json())
-  .then(data => {
-
-    const container = document.getElementById("projectList");
-    container.innerHTML = "";
-
-    data.forEach(project => {
-      container.innerHTML += `
-        <div class="list-item">
-          <span>${project.title}</span>
-
+    .then(res => res.json())
+    .then(data => {
+      const container = document.getElementById("projectList");
+      container.innerHTML = data.map(p => `
+        <div class="card-item">
+          <span>${p.title}</span>
           <button class="delete-btn"
-            onclick="deleteProject(${project.id})">
-            ❌
-          </button>
+            onclick="deleteProject(${p.id})">❌</button>
         </div>
-      `;
+      `).join("");
     });
-  });
 }
 
-/* TASKS */
+/* ================= TASK ================= */
 function loadTasks() {
   fetch(`${API_URL}/api/tasks/`, {
     headers: authHeader()
@@ -184,18 +189,16 @@ function loadTasks() {
     });
 }
 
-/* CREATE TASK */
+/* ================= CREATE TASK ================= */
 function createTask() {
   const data = {
-    title: document.getElementById("taskTitle").value,
-    description: document.getElementById("taskDesc").value,
-    status: document.getElementById("status").value,
-    assigned_to: document.getElementById("assignedUser").value,
-    project: document.getElementById("projectSelect").value,
-    deadline: document.getElementById("deadline").value
+    title: taskTitle.value,
+    description: taskDesc.value,
+    status: status.value,
+    assigned_to: assignedUser.value,
+    project: projectSelect.value,
+    deadline: deadline.value
   };
-
-  console.log("CREATE TASK DATA:", data); // 🔥 DEBUG
 
   fetch(`${API_URL}/api/tasks/create/`, {
     method: "POST",
@@ -204,15 +207,10 @@ function createTask() {
       ...authHeader()
     },
     body: JSON.stringify(data)
-  })
-    .then(res => res.json())
-    .then(res => {
-      console.log("TASK RESPONSE:", res);
-      loadTasks();
-    });
+  }).then(loadTasks);
 }
 
-/* UPDATE TASK */
+/* ================= UPDATE TASK ================= */
 function updateTask(id, status) {
   fetch(`${API_URL}/api/tasks/${id}/update/`, {
     method: "PUT",
@@ -224,7 +222,7 @@ function updateTask(id, status) {
   }).then(loadTasks);
 }
 
-/* DELETE TASK */
+/* ================= DELETE TASK ================= */
 function deleteTask(id) {
   fetch(`${API_URL}/api/tasks/${id}/delete/`, {
     method: "DELETE",
@@ -232,11 +230,11 @@ function deleteTask(id) {
   }).then(loadTasks);
 }
 
-/* CREATE PROJECT */
+/* ================= PROJECT ================= */
 function createProject() {
-  const title = document.getElementById("projectTitle").value.trim();
-  const description = document.getElementById("projectDesc").value.trim();
-  const createdBy = document.getElementById("createdBySelect").value;
+  const title = projectTitle.value.trim();
+  const description = projectDesc.value.trim();
+  const createdBy = createdBySelect.value;
 
   if (!title || !description || !createdBy) {
     alert("Fill all fields");
@@ -247,58 +245,26 @@ function createProject() {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": "Bearer " + localStorage.getItem("token")
+      ...authHeader()
     },
     body: JSON.stringify({
-      title: title,
-      description: description,
-      created_by: parseInt(createdBy)   // 🔥 REQUIRED FIELD
+      title,
+      description,
+      created_by: parseInt(createdBy)
     })
-  })
-  .then(async res => {
-    const data = await res.json();
-    console.log("PROJECT RESPONSE:", data);
-
-    if (!res.ok) {
-      alert("❌ " + JSON.stringify(data));
-      throw new Error("Create failed");
-    }
-
-    return data;
-  })
-  .then(() => {
-    alert("✅ Project created");
-    loadProjects();
-  })
-  .catch(err => console.error("PROJECT ERROR:", err));
+  }).then(loadProjects);
 }
-""
-/* DELETE PROJECT */
-function deleteProject(id) {
 
-  if (!confirm("Delete this project?")) return;
+function deleteProject(id) {
+  if (!confirm("Delete project?")) return;
 
   fetch(`${API_URL}/api/projects/${id}/delete/`, {
     method: "DELETE",
-    headers: {
-      Authorization: "Bearer " + localStorage.getItem("token")
-    }
-  })
-  .then(res => {
-    if (res.status === 204) {
-      alert("Deleted ✅");
-      loadProjects(); // refresh
-    } else {
-      throw new Error("Delete failed");
-    }
-  })
-  .catch(err => {
-    console.error("DELETE ERROR:", err);
-    alert("Error deleting project ❌");
-  });
+    headers: authHeader()
+  }).then(loadProjects);
 }
 
-/* CREATE USER */
+/* ================= USER ================= */
 function createUser() {
   fetch(`${API_URL}/api/users/create/`, {
     method: "POST",
@@ -316,7 +282,6 @@ function createUser() {
   }).then(loadUsers);
 }
 
-/* DELETE USER */
 function deleteUser(id) {
   fetch(`${API_URL}/api/users/${id}/delete/`, {
     method: "DELETE",
@@ -324,14 +289,14 @@ function deleteUser(id) {
   }).then(loadUsers);
 }
 
-/* AUTH */
+/* ================= AUTH ================= */
 function authHeader() {
   return {
     Authorization: "Bearer " + localStorage.getItem("token")
   };
 }
 
-/* NAV */
+/* ================= NAV ================= */
 function showSection(name) {
   dashboardSection.style.display = name === "dashboard" ? "block" : "none";
   projectSection.style.display = name === "projects" ? "block" : "none";
@@ -339,8 +304,8 @@ function showSection(name) {
   userSection.style.display = name === "users" ? "block" : "none";
 }
 
-/* LOGOUT */
+/* ================= LOGOUT ================= */
 function logout() {
-  localStorage.removeItem("token");
+  localStorage.clear();
   window.location.href = "index.html";
 }
