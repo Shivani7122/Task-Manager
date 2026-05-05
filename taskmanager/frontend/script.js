@@ -1,166 +1,191 @@
 const API_URL = "https://vigilant-guide-q7px6w69r7rh4q7g-8000.app.github.dev";
 
-/* ================= AUTH ================= */
+let currentUser = null;
 
+/* LOGIN */
 function login() {
-  const username = usernameInput.value;
-  const password = passwordInput.value;
+  const username = document.getElementById("usernameInput").value;
+  const password = document.getElementById("passwordInput").value;
   const msg = document.getElementById("msg");
 
   fetch(`${API_URL}/api/auth/login/`, {
     method: "POST",
-    headers: {"Content-Type": "application/json"},
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password })
   })
-  .then(res => res.json())
-  .then(data => {
-    if (!data.access) {
-      msg.innerText = "Invalid credentials";
-      return;
-    }
-
-    localStorage.setItem("token", data.access);
-
-    // 🔥 FETCH ROLE
-    fetch(`${API_URL}/api/users/`, {
-      headers: { Authorization: "Bearer " + data.access }
-    })
     .then(res => res.json())
-    .then(users => {
-      const user = users.find(u => u.username === username);
-      localStorage.setItem("role", user?.role || "member");
-      window.location.href = "dashboard.html";
+    .then(data => {
+      if (data.access) {
+        localStorage.setItem("token", data.access);
+        window.location.href = "dashboard.html";
+      } else {
+        msg.innerText = "Invalid username or password";
+      }
+    })
+    .catch(() => {
+      msg.innerText = "Server error";
     });
-  })
-  .catch(() => msg.innerText = "Server error");
 }
 
-function getHeaders() {
-  return {
-    "Content-Type": "application/json",
-    Authorization: "Bearer " + localStorage.getItem("token")
-  };
-}
-
-function isAdmin() {
-  return localStorage.getItem("role") === "admin";
-}
-
-/* ================= INIT ================= */
-
+/* INIT */
 function initApp() {
   if (!localStorage.getItem("token")) {
     window.location.href = "index.html";
     return;
   }
 
-  loadDashboard();
-  loadTasks();
+  loadUsers();      // 🔥 IMPORTANT
   loadProjects();
-  loadUsers();
+  loadTasks();
+  loadDashboard();
 }
 
-/* ================= USERS ================= */
-
-function loadUsers() {
-  if (!isAdmin()) return;
-
-  fetch(`${API_URL}/api/users/`, { headers: getHeaders() })
-  .then(res => res.json())
-  .then(data => {
-    usersList.innerHTML = "";
-
-    data.forEach(u => {
-      usersList.innerHTML += `
-        <div class="card-item">
-          <div>
-            <b>${u.username}</b> (${u.role})
-            <br>
-            Active: ${u.is_active ? "Yes" : "No"} |
-            Superuser: ${u.is_superuser ? "Yes" : "No"}
-          </div>
-
-          <div>
-            <button onclick="editUser(${u.id}, '${u.role}', ${u.is_active}, ${u.is_superuser})">✏️</button>
-            <button onclick="deleteUser(${u.id})">🗑</button>
-          </div>
-        </div>
-      `;
-    });
-  });
-}
-
-function createUser() {
-  if (!isAdmin()) return alert("Admin only");
-
-  fetch(`${API_URL}/api/users/create/`, {
-    method: "POST",
-    headers: getHeaders(),
-    body: JSON.stringify({
-      username: newUsername.value,
-      password: newPassword.value,
-      role: newRole.value,
-      is_superuser: isSuperuser.checked,
-      is_active: isActive.checked
-    })
+/* DASHBOARD */
+function loadDashboard() {
+  fetch(`${API_URL}/api/dashboard/`, {
+    headers: authHeader()
   })
-  .then(() => {
-    loadUsers();
-    alert("User created");
-  });
-}
-
-function deleteUser(id) {
-  fetch(`${API_URL}/api/users/${id}/delete/`, {
-    method: "DELETE",
-    headers: getHeaders()
-  }).then(() => loadUsers());
-}
-
-function editUser(id, role, active, superuser) {
-  const newRoleVal = prompt("Role (admin/member)", role);
-  const newActive = confirm("Active?");
-  const newSuper = confirm("Superuser?");
-
-  fetch(`${API_URL}/api/users/${id}/update/`, {
-    method: "PUT",
-    headers: getHeaders(),
-    body: JSON.stringify({
-      role: newRoleVal,
-      is_active: newActive,
-      is_superuser: newSuper
-    })
-  }).then(() => loadUsers());
-}
-
-/* ================= PROJECT ================= */
-
-function loadProjects() {
-  fetch(`${API_URL}/api/projects/`, { headers: getHeaders() })
-  .then(res => res.json())
-  .then(data => {
-    projectList.innerHTML = "";
-    projectSelect.innerHTML = "";
-
-    data.forEach(p => {
-      projectList.innerHTML += `
-        <div class="card-item">
-          ${p.title}
-          ${isAdmin() ? `<button onclick="deleteProject(${p.id})">🗑</button>` : ""}
-        </div>
+    .then(res => res.json())
+    .then(d => {
+      document.getElementById("dashboard").innerHTML = `
+        <div>Total: ${d.total_tasks}</div>
+        <div>Done: ${d.completed_tasks}</div>
+        <div>Pending: ${d.pending_tasks}</div>
       `;
-
-      projectSelect.innerHTML += `<option value="${p.id}">${p.title}</option>`;
     });
-  });
 }
 
-function createProject() {
-  if (!isAdmin()) return alert("Admin only");
+/* USERS */
+function loadUsers() {
+  fetch(`${API_URL}/api/users/`, {
+    headers: authHeader()
+  })
+    .then(res => res.json())
+    .then(users => {
+      console.log("USERS:", users); // 🔥 DEBUG
 
+      const dropdown = document.getElementById("assignedUser");
+      const list = document.getElementById("usersList");
+
+      if (dropdown) {
+        dropdown.innerHTML = users.map(u =>
+          `<option value="${u.id}">${u.username}</option>`
+        ).join("");
+      }
+
+      if (list) {
+        list.innerHTML = users.map(u => `
+          <div class="card-item">
+            <span>${u.username} (${u.role})</span>
+            <button onclick="deleteUser(${u.id})">❌</button>
+          </div>
+        `).join("");
+      }
+    });
+}
+
+/* PROJECTS */
+function loadProjects() {
+  fetch(`${API_URL}/api/projects/`, {
+    headers: authHeader()
+  })
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById("projectSelect").innerHTML =
+        data.map(p => `<option value="${p.id}">${p.title}</option>`).join("");
+
+      document.getElementById("projectList").innerHTML =
+        data.map(p => `
+          <div class="card-item">
+            ${p.title}
+            <button onclick="deleteProject(${p.id})">❌</button>
+          </div>
+        `).join("");
+    });
+}
+
+/* TASKS */
+function loadTasks() {
+  fetch(`${API_URL}/api/tasks/`, {
+    headers: authHeader()
+  })
+    .then(res => res.json())
+    .then(tasks => {
+      document.getElementById("tasksDiv").innerHTML = tasks.map(t => `
+        <div class="task-card">
+          <h4>${t.title}</h4>
+          <p>${t.description}</p>
+          <small>👤 ${t.assigned_to_username} | 📦 ${t.project_title}</small>
+          <div class="status ${t.status}">${t.status}</div>
+
+          <select onchange="updateTask(${t.id}, this.value)">
+            <option value="pending">Pending</option>
+            <option value="in_progress">In Progress</option>
+            <option value="done">Done</option>
+          </select>
+
+          <button onclick="deleteTask(${t.id})">❌</button>
+        </div>
+      `).join("");
+    });
+}
+
+/* CREATE TASK */
+function createTask() {
+  const data = {
+    title: document.getElementById("taskTitle").value,
+    description: document.getElementById("taskDesc").value,
+    status: document.getElementById("status").value,
+    assigned_to: document.getElementById("assignedUser").value,
+    project: document.getElementById("projectSelect").value,
+    deadline: document.getElementById("deadline").value
+  };
+
+  console.log("CREATE TASK DATA:", data); // 🔥 DEBUG
+
+  fetch(`${API_URL}/api/tasks/create/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeader()
+    },
+    body: JSON.stringify(data)
+  })
+    .then(res => res.json())
+    .then(res => {
+      console.log("TASK RESPONSE:", res);
+      loadTasks();
+    });
+}
+
+/* UPDATE TASK */
+function updateTask(id, status) {
+  fetch(`${API_URL}/api/tasks/${id}/update/`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeader()
+    },
+    body: JSON.stringify({ status })
+  }).then(loadTasks);
+}
+
+/* DELETE TASK */
+function deleteTask(id) {
+  fetch(`${API_URL}/api/tasks/${id}/delete/`, {
+    method: "DELETE",
+    headers: authHeader()
+  }).then(loadTasks);
+}
+
+/* CREATE PROJECT */
+function createProject() {
   fetch(`${API_URL}/api/projects/create/`, {
     method: "POST",
-    headers: getHeaders(),
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeader()
+    },
     body: JSON.stringify({
       title: projectTitle.value,
       description: projectDesc.value
@@ -168,109 +193,57 @@ function createProject() {
   }).then(loadProjects);
 }
 
+/* DELETE PROJECT */
 function deleteProject(id) {
   fetch(`${API_URL}/api/projects/${id}/delete/`, {
     method: "DELETE",
-    headers: getHeaders()
+    headers: authHeader()
   }).then(loadProjects);
 }
 
-/* ================= TASK ================= */
-
-function loadTasks() {
-  fetch(`${API_URL}/api/tasks/`, { headers: getHeaders() })
-  .then(res => res.json())
-  .then(tasks => {
-    tasksDiv.innerHTML = "";
-
-    tasks.forEach(t => {
-      tasksDiv.innerHTML += `
-        <div class="task-card">
-          <h4>${t.title}</h4>
-          <p>${t.description}</p>
-
-          <small>👤 ${t.assigned_to_username}</small>
-          <small>📦 ${t.project_title}</small>
-
-          <div class="status ${t.status}">${t.status}</div>
-
-          <div class="actions">
-            <select onchange="updateTask(${t.id}, this.value)">
-              <option ${t.status==='pending'?'selected':''} value="pending">Pending</option>
-              <option ${t.status==='in_progress'?'selected':''} value="in_progress">In Progress</option>
-              <option ${t.status==='done'?'selected':''} value="done">Done</option>
-            </select>
-
-            ${isAdmin() ? `<button onclick="deleteTask(${t.id})">🗑</button>` : ""}
-          </div>
-        </div>
-      `;
-    });
-  });
-}
-
-function createTask() {
-  if (!isAdmin()) return alert("Admin only");
-
-  fetch(`${API_URL}/api/tasks/create/`, {
+/* CREATE USER */
+function createUser() {
+  fetch(`${API_URL}/api/users/create/`, {
     method: "POST",
-    headers: getHeaders(),
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeader()
+    },
     body: JSON.stringify({
-      title: taskTitle.value,
-      description: taskDesc.value,
-      status: status.value,
-      assigned_to: assignedUser.value,
-      project: projectSelect.value,
-      deadline: deadline.value
+      username: newUsername.value,
+      password: newPassword.value,
+      role: newRole.value,
+      is_superuser: isSuperuser.checked,
+      is_active: isActive.checked
     })
-  }).then(() => {
-    loadTasks();
-    loadDashboard();
-  });
+  }).then(loadUsers);
 }
 
-function updateTask(id, status) {
-  fetch(`${API_URL}/api/tasks/${id}/update/`, {
-    method: "PUT",
-    headers: getHeaders(),
-    body: JSON.stringify({ status })
-  }).then(loadTasks);
-}
-
-function deleteTask(id) {
-  fetch(`${API_URL}/api/tasks/${id}/delete/`, {
+/* DELETE USER */
+function deleteUser(id) {
+  fetch(`${API_URL}/api/users/${id}/delete/`, {
     method: "DELETE",
-    headers: getHeaders()
-  }).then(loadTasks);
+    headers: authHeader()
+  }).then(loadUsers);
 }
 
-/* ================= DASHBOARD ================= */
-
-function loadDashboard() {
-  fetch(`${API_URL}/api/dashboard/`, { headers: getHeaders() })
-  .then(res => res.json())
-  .then(d => {
-    dashboard.innerHTML = `
-      <div>Total: ${d.total_tasks}</div>
-      <div>Completed: ${d.completed_tasks}</div>
-      <div>Pending: ${d.pending_tasks}</div>
-      <div>Overdue: ${d.overdue_tasks}</div>
-    `;
-  });
+/* AUTH */
+function authHeader() {
+  return {
+    Authorization: "Bearer " + localStorage.getItem("token")
+  };
 }
 
-/* ================= NAV ================= */
-
+/* NAV */
 function showSection(name) {
-  dashboardSection.style.display = name==="dashboard"?"block":"none";
-  projectSection.style.display = name==="projects"?"block":"none";
-  taskSection.style.display = name==="tasks"?"block":"none";
-  userSection.style.display = name==="users"?"block":"none";
+  dashboardSection.style.display = name === "dashboard" ? "block" : "none";
+  projectSection.style.display = name === "projects" ? "block" : "none";
+  taskSection.style.display = name === "tasks" ? "block" : "none";
+  userSection.style.display = name === "users" ? "block" : "none";
 }
 
-/* ================= LOGOUT ================= */
-
+/* LOGOUT */
 function logout() {
-  localStorage.clear();
+  localStorage.removeItem("token");
   window.location.href = "index.html";
 }
