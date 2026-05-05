@@ -209,10 +209,9 @@ function deleteTask(id) {
 function createProject() {
   const title = document.getElementById("projectTitle").value.trim();
   const description = document.getElementById("projectDesc").value.trim();
+  const createdBy = document.getElementById("createdBySelect").value;
 
-  const userId = localStorage.getItem("user_id"); // 👈 add this
-
-  if (!title || !description) {
+  if (!title || !description || !createdBy) {
     alert("Fill all fields");
     return;
   }
@@ -226,7 +225,7 @@ function createProject() {
     body: JSON.stringify({
       title: title,
       description: description,
-      created_by: userId   // 🔥 THIS FIXES IT
+      created_by: parseInt(createdBy)   // 🔥 REQUIRED FIELD
     })
   })
   .then(async res => {
@@ -242,16 +241,11 @@ function createProject() {
   })
   .then(() => {
     alert("✅ Project created");
-
-    document.getElementById("projectTitle").value = "";
-    document.getElementById("projectDesc").value = "";
-
     loadProjects();
   })
-  .catch(err => {
-    console.error("PROJECT ERROR:", err);
-  });
+  .catch(err => console.error("PROJECT ERROR:", err));
 }
+""
 /* DELETE PROJECT */
 function deleteProject(id) {
 
