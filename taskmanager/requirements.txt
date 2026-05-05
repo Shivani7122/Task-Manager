@@ -1,7 +1,8 @@
 django
 djangorestframework
 pymysql
-cryptography
-dj-database-url==2.1.0
+cryptography"
 python-dotenv
 gunicorn
+whitenoise
+dj-database-url
