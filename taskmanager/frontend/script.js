@@ -35,7 +35,7 @@ function login() {
         .then(users => {
           const user = users.find(u => u.username === username);
 
-          if (!user || user.role !== role) {
+          if (!user || user.role.toLowerCase() !== role.toLowerCase()) {
             msg.innerText = "Wrong role selected ❌";
             return;
           }
