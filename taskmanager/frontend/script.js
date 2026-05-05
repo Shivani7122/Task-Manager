@@ -35,13 +35,14 @@ function login() {
         .then(users => {
           const user = users.find(u => u.username === username);
 
-          if (!user || user.role.toLowerCase() !== role.toLowerCase()) {
-            msg.innerText = "Wrong role selected ❌";
+          if (!user) {
+            msg.innerText = "User not found ❌";
             return;
           }
 
+          // 🔥 store role lowercase for consistency
           localStorage.setItem("token", data.access);
-          localStorage.setItem("role", user.role);
+          localStorage.setItem("role", user.role.toLowerCase());
           localStorage.setItem("user_id", user.id);
 
           window.location.href = "dashboard.html";
@@ -64,9 +65,14 @@ function initApp() {
     return;
   }
 
+  // 🔥 ONLY MEMBER CONTROL (admin untouched)
   if (role === "member") {
     document.getElementById("projectSection").style.display = "none";
     document.getElementById("userSection").style.display = "none";
+
+    // hide create task button
+    const btn = document.querySelector("#taskSection button");
+    if (btn) btn.style.display = "none";
   }
 
   loadUsers();
@@ -80,18 +86,39 @@ function initApp() {
 /* ================= DASHBOARD ================= */
 function loadDashboard() {
   const container = document.getElementById("dashboard");
+  const role = localStorage.getItem("role");
+  const userId = localStorage.getItem("user_id");
+
   container.innerHTML = `<div class="loader"></div>`;
 
-  fetch(`${API_URL}/api/dashboard/`, {
+  fetch(`${API_URL}/api/tasks/`, {
     headers: authHeader()
   })
     .then(res => res.json())
-    .then(d => {
+    .then(tasks => {
+
+      // 🔥 Member → only own tasks
+      let filtered = role === "member"
+        ? tasks.filter(t => t.assigned_to == userId)
+        : tasks;
+
+      const total = filtered.length;
+      const done = filtered.filter(t => t.status === "done").length;
+      const pending = filtered.filter(t => t.status === "pending").length;
+
+      const overdue = filtered.filter(t =>
+        t.deadline &&
+        new Date(t.deadline) < new Date() &&
+        t.status !== "done"
+      ).length;
+
       container.innerHTML = `
-        <div>📌 Total: ${d.total_tasks}</div>
-        <div>✅ Done: ${d.completed_tasks}</div>
-        <div>⏳ Pending: ${d.pending_tasks}</div>
-        <div>⚠️ Overdue: ${d.overdue_tasks}</div>
+        <div class="grid">
+          <div>📌 Total: ${total}</div>
+          <div>✅ Done: ${done}</div>
+          <div>⏳ Pending: ${pending}</div>
+          <div style="color:red;">⚠️ Overdue: ${overdue}</div>
+        </div>
       `;
     });
 }
@@ -104,7 +131,7 @@ function loadUsers() {
     .then(res => res.json())
     .then(users => {
 
-      // Assigned dropdown
+      // dropdowns (admin use only, but safe)
       const assigned = document.getElementById("assignedUser");
       if (assigned) {
         assigned.innerHTML =
@@ -114,7 +141,6 @@ function loadUsers() {
           ).join("");
       }
 
-      // Created by dropdown
       const createdBy = document.getElementById("createdBySelect");
       if (createdBy) {
         createdBy.innerHTML =
@@ -124,7 +150,6 @@ function loadUsers() {
           ).join("");
       }
 
-      // User list
       const list = document.getElementById("usersList");
       if (list) {
         list.innerHTML = users.map(u => `
@@ -161,7 +186,9 @@ function loadProjects() {
             <b>${p.title}</b><br>
             <small>${p.description || ""}</small>
           </div>
-          ${role === "admin" ? `<button onclick="deleteProject(${p.id})">❌</button>` : ""}
+          ${role === "admin"
+            ? `<button onclick="deleteProject(${p.id})">❌</button>`
+            : ""}
         </div>
       `).join("");
 
@@ -194,131 +221,48 @@ function loadTasks() {
         ? tasks.filter(t => t.assigned_to == userId)
         : tasks;
 
-      container.innerHTML = filtered.map(t => `
-        <div class="task-card">
-          <h4>${t.title}</h4>
-          <p>${t.description}</p>
+      container.innerHTML = filtered.map(t => {
 
-          <small>👤 ${t.assigned_to_username} | 📦 ${t.project_title}</small>
+        const isOverdue =
+          t.deadline &&
+          new Date(t.deadline) < new Date() &&
+          t.status !== "done";
 
-          <div class="status ${t.status}">
-            ${formatStatus(t.status)}
+        return `
+          <div class="task-card" style="${isOverdue ? 'border:2px solid red;' : ''}">
+            <h4>${t.title}</h4>
+            <p>${t.description || ""}</p>
+
+            <small>👤 ${t.assigned_to_username} | 📦 ${t.project_title}</small>
+
+            <div class="status ${t.status}">
+              ${formatStatus(t.status)}
+            </div>
+
+            ${isOverdue ? `<div style="color:red;">⚠️ Overdue</div>` : ""}
+
+            <select onchange="updateTask(${t.id}, this.value)">
+              <option value="pending" ${t.status==="pending"?"selected":""}>Pending</option>
+              <option value="in_progress" ${t.status==="in_progress"?"selected":""}>In Progress</option>
+              <option value="done" ${t.status==="done"?"selected":""}>Done</option>
+            </select>
+
+            ${role === "admin"
+              ? `<button onclick="deleteTask(${t.id})">❌</button>`
+              : ""}
           </div>
-
-          <select onchange="updateTask(${t.id}, this.value)">
-            <option value="pending" ${t.status==="pending"?"selected":""}>Pending</option>
-            <option value="in_progress" ${t.status==="in_progress"?"selected":""}>In Progress</option>
-            <option value="done" ${t.status==="done"?"selected":""}>Done</option>
-          </select>
-
-          ${role === "admin"
-            ? `<button onclick="deleteTask(${t.id})">❌</button>`
-            : ""}
-        </div>
-      `).join("");
+        `;
+      }).join("");
     });
 }
 
+/* ================= HELPERS ================= */
 function formatStatus(status) {
   return status === "pending" ? "⏳ Pending" :
          status === "in_progress" ? "🚀 In Progress" :
          "✅ Completed";
 }
 
-/* ================= CREATE TASK ================= */
-function createTask() {
-  const role = localStorage.getItem("role");
-  if (role !== "admin") {
-    alert("Only admin allowed ❌");
-    return;
-  }
-
-  const data = {
-    title: document.getElementById("taskTitle").value,
-    description: document.getElementById("taskDesc").value,
-    status: document.getElementById("status").value,
-    assigned_to: document.getElementById("assignedUser").value,
-    project: document.getElementById("projectSelect").value,
-    deadline: document.getElementById("deadline").value
-  };
-
-  if (!data.title || !data.description || !data.assigned_to || !data.project || !data.deadline) {
-    alert("Fill all fields ❌");
-    return;
-  }
-
-  fetch(`${API_URL}/api/tasks/create/`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...authHeader() },
-    body: JSON.stringify(data)
-  }).then(loadTasks);
-}
-
-/* ================= UPDATE TASK ================= */
-function updateTask(id, status) {
-  fetch(`${API_URL}/api/tasks/${id}/update/`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json", ...authHeader() },
-    body: JSON.stringify({ status })
-  }).then(loadTasks);
-}
-
-/* ================= DELETE TASK ================= */
-function deleteTask(id) {
-  fetch(`${API_URL}/api/tasks/${id}/delete/`, {
-    method: "DELETE",
-    headers: authHeader()
-  }).then(loadTasks);
-}
-
-/* ================= PROJECT ================= */
-function createProject() {
-  const title = document.getElementById("projectTitle").value;
-  const description = document.getElementById("projectDesc").value;
-  const createdBy = document.getElementById("createdBySelect").value;
-
-  if (!title || !description || !createdBy) {
-    alert("Fill all fields ❌");
-    return;
-  }
-
-  fetch(`${API_URL}/api/projects/create/`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...authHeader() },
-    body: JSON.stringify({ title, description, created_by: parseInt(createdBy) })
-  }).then(loadProjects);
-}
-
-function deleteProject(id) {
-  fetch(`${API_URL}/api/projects/${id}/delete/`, {
-    method: "DELETE",
-    headers: authHeader()
-  }).then(loadProjects);
-}
-
-/* ================= USER ================= */
-function createUser() {
-  fetch(`${API_URL}/api/users/create/`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...authHeader() },
-    body: JSON.stringify({
-      username: newUsername.value,
-      password: newPassword.value,
-      role: newRole.value,
-      is_superuser: isSuperuser.checked,
-      is_active: isActive.checked
-    })
-  }).then(loadUsers);
-}
-
-function deleteUser(id) {
-  fetch(`${API_URL}/api/users/${id}/delete/`, {
-    method: "DELETE",
-    headers: authHeader()
-  }).then(loadUsers);
-}
-
-/* ================= AUTH ================= */
 function authHeader() {
   return {
     Authorization: "Bearer " + localStorage.getItem("token")
