@@ -2,24 +2,35 @@ const API_URL = "https://vigilant-guide-q7px6w69r7rh4q7g-8000.app.github.dev";
 
 /* LOGIN */
 function login() {
-  const username = usernameInput.value;
-  const password = passwordInput.value;
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
+  const msg = document.getElementById("msg");
+
+  if (!username || !password) {
+    msg.innerText = "Please enter username & password";
+    return;
+  }
 
   fetch(`${API_URL}/api/login/`, {
     method: "POST",
-    headers: {"Content-Type": "application/json"},
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password })
   })
   .then(res => res.json())
   .then(data => {
-    if(data.access){
+    console.log(data);  // 🔥 debug
+
+    if (data.access) {
       localStorage.setItem("token", data.access);
       window.location.href = "dashboard.html";
     } else {
-      msg.innerText = "Login failed";
+      msg.innerText = "Invalid credentials";
     }
   })
-  .catch(() => msg.innerText = "Server error");
+  .catch(err => {
+    console.error(err);
+    msg.innerText = "Server error";
+  });
 }
 
 /* DASHBOARD */
