@@ -23,10 +23,16 @@ from core.views import DashboardView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path('create-project/', ProjectCreateView.as_view()),
-    path('create-task/', TaskCreateView.as_view()),
-    path('update-task/<int:pk>/', TaskUpdateView.as_view()),
-    path('tasks/', TaskListView.as_view()),
-    path('login/', TokenObtainPairView.as_view()),
-    path('dashboard/', DashboardView.as_view()),
+
+    # 🔐 Auth
+    path('api/login/', TokenObtainPairView.as_view(), name='login'),
+
+    # 📦 Project & Task
+    path('api/create-project/', ProjectCreateView.as_view()),
+    path('api/create-task/', TaskCreateView.as_view()),
+    path('api/update-task/<int:pk>/', TaskUpdateView.as_view()),
+    path('api/tasks/', TaskListView.as_view()),
+
+    # 📊 Dashboard
+    path('api/dashboard/', DashboardView.as_view()),
 ]
