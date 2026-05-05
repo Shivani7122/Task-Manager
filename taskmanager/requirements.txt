@@ -1,7 +1,7 @@
 django
 djangorestframework
+pymysql
 cryptography
 dj-database-url==2.1.0
 python-dotenv
 gunicorn
-mysqlclient
