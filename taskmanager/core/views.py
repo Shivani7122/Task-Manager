@@ -29,7 +29,12 @@ class ProjectListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        projects = Project.objects.all()
+
+        if request.user.role == "admin":
+            projects = Project.objects.all()
+        else:
+            projects = Project.objects.filter(task__assigned_to=request.user).distinct()
+
         return Response(ProjectSerializer(projects, many=True).data)
 
 
@@ -152,6 +157,7 @@ class UserCreateView(APIView):
             password=make_password(data.get("password")),
             role=data.get("role", "member"),
             is_superuser=data.get("is_superuser", False),
+            is_active=data.get("is_active", True),
             is_staff=True
         )
 

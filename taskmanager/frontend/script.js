@@ -1,7 +1,25 @@
 const API_URL = "https://vigilant-guide-q7px6w69r7rh4q7g-8000.app.github.dev";
 
+/* ========= DOM ========= */
+const tasksDiv = document.getElementById("tasks");
+const assignedUser = document.getElementById("assignedUser");
+const projectSelect = document.getElementById("projectSelect");
+const projectList = document.getElementById("projectList");
+const usersList = document.getElementById("usersList");
+
+const dashboard = document.getElementById("dashboard");
+
+const dashboardSection = document.getElementById("dashboardSection");
+const projectSection = document.getElementById("projectSection");
+const taskSection = document.getElementById("taskSection");
+const userSection = document.getElementById("userSection");
+
 /* ========= LOGIN ========= */
 function login() {
+  const username = document.getElementById("username");
+  const password = document.getElementById("password");
+  const msg = document.getElementById("msg");
+
   fetch(`${API_URL}/api/auth/login/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -34,6 +52,13 @@ function getUserRole() {
   const token = getToken();
   if (!token) return null;
   return JSON.parse(atob(token.split('.')[1])).role;
+}
+
+/* ========= AUTH GUARD ========= */
+function checkAuth() {
+  if (!getToken()) {
+    window.location.href = "index.html";
+  }
 }
 
 /* ========= UI CONTROL ========= */
@@ -83,9 +108,7 @@ function loadTasks() {
         </div>
 
         <div>
-          ${role === "admin" ? `
-            <button onclick="deleteTask(${t.id})">🗑</button>
-          ` : ""}
+          ${role === "admin" ? `<button onclick="deleteTask(${t.id})">🗑</button>` : ""}
 
           <button onclick="updateStatus(${t.id}, 'pending')">P</button>
           <button onclick="updateStatus(${t.id}, 'in_progress')">IP</button>
@@ -114,7 +137,12 @@ function createTask() {
       project: projectSelect.value,
       deadline: deadline.value
     })
-  }).then(() => {
+  })
+  .then(() => {
+    taskTitle.value = "";
+    taskDesc.value = "";
+    deadline.value = "";
+
     loadTasks();
     loadDashboard();
   });
@@ -128,7 +156,7 @@ function deleteTask(id) {
   }).then(() => loadTasks());
 }
 
-/* ========= UPDATE ========= */
+/* ========= UPDATE STATUS ========= */
 function updateStatus(id, status) {
   fetch(`${API_URL}/api/tasks/${id}/update/`, {
     method: "PUT",
@@ -140,7 +168,7 @@ function updateStatus(id, status) {
   }).then(() => loadTasks());
 }
 
-/* ========= USERS ========= */
+/* ========= USERS DROPDOWN ========= */
 function loadUsers() {
   fetch(`${API_URL}/api/users/`, {
     headers: { Authorization: "Bearer " + getToken() }
@@ -153,7 +181,7 @@ function loadUsers() {
   });
 }
 
-/* ========= USER LIST ========= */
+/* ========= USERS LIST ========= */
 function loadUsersList() {
   if (getUserRole() !== "admin") return;
 
@@ -163,22 +191,25 @@ function loadUsersList() {
   .then(res => res.json())
   .then(users => {
     usersList.innerHTML = users.map(u => `
-  <div class="task">
-    <div>
-      <b>${u.username}</b><br>
-      Role: ${u.role}
-    </div>
+      <div class="task">
+        <div>
+          <b>${u.username}</b><br>
+          Role: ${u.role} <br>
+          Status: ${u.is_active ? "Active" : "Inactive"}
+        </div>
 
-    <div>
-      <button onclick="changeRole(${u.id}, 'admin')">Admin</button>
-      <button onclick="changeRole(${u.id}, 'member')">Member</button>
-      <button onclick="deleteUser(${u.id})">🗑</button>
-    </div>
-  </div>
-`).join("");
+        <div>
+          <button onclick="changeRole(${u.id}, 'admin')">A</button>
+          <button onclick="changeRole(${u.id}, 'member')">M</button>
+          <button onclick="toggleUserStatus(${u.id}, ${u.is_active})">⚡</button>
+          <button onclick="deleteUser(${u.id})">🗑</button>
+        </div>
+      </div>
+    `).join("");
   });
 }
 
+/* ========= USER ACTIONS ========= */
 function changeRole(id, role) {
   fetch(`${API_URL}/api/users/${id}/update/`, {
     method: "PUT",
@@ -190,6 +221,16 @@ function changeRole(id, role) {
   }).then(() => loadUsersList());
 }
 
+function toggleUserStatus(id, currentStatus) {
+  fetch(`${API_URL}/api/users/${id}/update/`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + getToken()
+    },
+    body: JSON.stringify({ is_active: !currentStatus })
+  }).then(() => loadUsersList());
+}
 
 function createUser() {
   fetch(`${API_URL}/api/users/create/`, {
@@ -204,19 +245,6 @@ function createUser() {
       role: newRole.value,
       is_superuser: isSuperuser.checked,
       is_active: isActive.checked
-    })
-  }).then(() => loadUsersList());
-}
-
-function toggleUserStatus(id, currentStatus) {
-  fetch(`${API_URL}/api/users/${id}/update/`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + getToken()
-    },
-    body: JSON.stringify({
-      is_active: !currentStatus
     })
   }).then(() => loadUsersList());
 }
@@ -250,7 +278,7 @@ function loadProjectList() {
     projectList.innerHTML = data.map(p => `
       <div class="task">
         <span>${p.title}</span>
-        <button onclick="deleteProject(${p.id})">🗑</button>
+        ${getUserRole() === "admin" ? `<button onclick="deleteProject(${p.id})">🗑</button>` : ""}
       </div>
     `).join("");
   });
@@ -279,7 +307,6 @@ function deleteProject(id) {
   }).then(() => loadProjectList());
 }
 
-
 /* ========= NAV ========= */
 function showSection(name) {
   dashboardSection.style.display = name==="dashboard"?"block":"none";
@@ -296,11 +323,15 @@ function logout() {
 
 /* ========= INIT ========= */
 function initApp() {
+  checkAuth();
   applyRoleUI();
-  loadDashboard();
-  loadTasks();
+
   loadUsers();
   loadProjects();
+
+  loadDashboard();
+  loadTasks();
+
   loadProjectList();
   loadUsersList();
 }

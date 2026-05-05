@@ -18,9 +18,20 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 # 🔹 Task Serializer
 class TaskSerializer(serializers.ModelSerializer):
-    assigned_to_username = serializers.CharField(source='assigned_to.username', read_only=True)
-    project_title = serializers.CharField(source='project.title', read_only=True)
-
+    assigned_to = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+    project = serializers.PrimaryKeyRelatedField(queryset=Project.objects.all())
+    assigned_to_username = serializers.ReadOnlyField(source='assigned_to.username')
+    project_title = serializers.ReadOnlyField(source='project.title')
     class Meta:
         model = Task
-        fields = '__all__'
+        fields = [
+            'id',
+            'title',
+            'description',
+            'status',
+            'assigned_to',
+            'assigned_to_username',
+            'project',
+            'project_title',
+            'deadline'
+        ]
