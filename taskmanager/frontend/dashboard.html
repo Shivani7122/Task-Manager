@@ -1,71 +1,75 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Task Manager</title>
+  <title>Dashboard</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<div class="container">
+<div class="app-wrapper">
 
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <h2>⚡ TaskApp</h2>
+  <div class="container">
 
-    <button onclick="showSection('dashboard')">Dashboard</button>
-    <button onclick="showSection('projects')">Projects</button>
-    <button onclick="showSection('tasks')">Tasks</button>
-    <button onclick="logout()">Logout</button>
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <h2>⚡ TaskApp</h2>
+
+      <button onclick="showSection('dashboard')">Dashboard</button>
+      <button onclick="showSection('projects')">Projects</button>
+      <button onclick="showSection('tasks')">Tasks</button>
+      <button onclick="logout()">Logout</button>
+    </div>
+
+    <!-- Main -->
+    <div class="main">
+
+      <!-- Dashboard -->
+      <div id="dashboardSection" class="card">
+        <h3>Dashboard</h3>
+        <div id="dashboard" class="grid"></div>
+      </div>
+
+      <!-- Projects -->
+      <div id="projectSection" class="card" style="display:none;">
+        <h3>Create Project</h3>
+
+        <input id="projectTitle" placeholder="Project Title">
+        <input id="projectDesc" placeholder="Description">
+
+        <button onclick="createProject()">Create Project</button>
+      </div>
+
+      <!-- Tasks -->
+      <div id="taskSection" class="card" style="display:none;">
+        <h3>Create Task</h3>
+
+        <input id="taskTitle" placeholder="Title">
+        <input id="taskDesc" placeholder="Description">
+
+        <select id="status">
+          <option value="pending">Pending</option>
+          <option value="in_progress">In Progress</option>
+          <option value="done">Done</option>
+        </select>
+
+        <select id="assignedUser"></select>
+        <select id="projectSelect"></select>
+
+        <input type="date" id="deadline">
+
+        <button onclick="createTask()">Create Task</button>
+      </div>
+
+      <!-- Task List -->
+      <div class="card">
+        <h3>Tasks</h3>
+        <div id="tasks"></div>
+      </div>
+
+    </div>
   </div>
 
-  <!-- Main -->
-  <div class="main">
-
-    <!-- DASHBOARD -->
-    <div id="dashboardSection" class="card">
-      <h3>Dashboard</h3>
-      <div id="dashboard" class="grid"></div>
-    </div>
-
-    <!-- CREATE PROJECT -->
-    <div id="projectSection" class="card">
-      <h3>Create Project</h3>
-
-      <input id="projectTitle" placeholder="Project Title">
-      <input id="projectDesc" placeholder="Description">
-
-      <button onclick="createProject()">Create Project</button>
-    </div>
-
-    <!-- CREATE TASK -->
-    <div id="taskSection" class="card">
-      <h3>Create Task</h3>
-
-      <input id="taskTitle" placeholder="Title">
-      <input id="taskDesc" placeholder="Description">
-
-      <select id="status">
-        <option value="pending">Pending</option>
-        <option value="in_progress">In Progress</option>
-        <option value="done">Done</option>
-      </select>
-
-      <select id="assignedUser"></select>
-      <select id="projectSelect"></select>
-
-      <input type="date" id="deadline">
-
-      <button onclick="createTask()">Create Task</button>
-    </div>
-
-    <!-- TASK LIST -->
-    <div class="card">
-      <h3>Tasks</h3>
-      <div id="tasks"></div>
-    </div>
-
-  </div>
 </div>
 
 <script src="script.js"></script>
