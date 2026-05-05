@@ -119,3 +119,16 @@ body {
   display: flex;
   gap: 20px;
 }
+
+.delete-btn {
+  background: #ff4d4d;
+  border: none;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.delete-btn:hover {
+  background: #ff1a1a;
+}

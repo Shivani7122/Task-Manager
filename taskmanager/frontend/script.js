@@ -97,21 +97,29 @@ function loadUsers() {
 /* PROJECTS */
 function loadProjects() {
   fetch(`${API_URL}/api/projects/`, {
-    headers: authHeader()
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("token")
+    }
   })
-    .then(res => res.json())
-    .then(data => {
-      document.getElementById("projectSelect").innerHTML =
-        data.map(p => `<option value="${p.id}">${p.title}</option>`).join("");
+  .then(res => res.json())
+  .then(data => {
 
-      document.getElementById("projectList").innerHTML =
-        data.map(p => `
-          <div class="card-item">
-            ${p.title}
-            <button onclick="deleteProject(${p.id})">❌</button>
-          </div>
-        `).join("");
+    const container = document.getElementById("projectList");
+    container.innerHTML = "";
+
+    data.forEach(project => {
+      container.innerHTML += `
+        <div class="list-item">
+          <span>${project.title}</span>
+
+          <button class="delete-btn"
+            onclick="deleteProject(${project.id})">
+            ❌
+          </button>
+        </div>
+      `;
     });
+  });
 }
 
 /* TASKS */
@@ -190,25 +198,67 @@ function deleteTask(id) {
 
 /* CREATE PROJECT */
 function createProject() {
+  const title = document.getElementById("projectTitle").value;
+  const description = document.getElementById("projectDesc").value;
+
+  if (!title || !description) {
+    alert("Fill all fields");
+    return;
+  }
+
   fetch(`${API_URL}/api/projects/create/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...authHeader()
+      "Authorization": "Bearer " + localStorage.getItem("token")
     },
     body: JSON.stringify({
-      title: projectTitle.value,
-      description: projectDesc.value
+      title: title,
+      description: description
+      // ❗ created_by backend automatically ले रहा है request.user से
     })
-  }).then(loadProjects);
-}
+  })
+  .then(res => {
+    if (!res.ok) throw new Error("Failed to create project");
+    return res.json();
+  })
+  .then(data => {
+    alert("Project created ✅");
 
+    // clear fields
+    document.getElementById("projectTitle").value = "";
+    document.getElementById("projectDesc").value = "";
+
+    loadProjects(); // 🔥 refresh list
+  })
+  .catch(err => {
+    console.error("PROJECT ERROR:", err);
+    alert("Error creating project ❌");
+  });
+}
 /* DELETE PROJECT */
 function deleteProject(id) {
+
+  if (!confirm("Delete this project?")) return;
+
   fetch(`${API_URL}/api/projects/${id}/delete/`, {
     method: "DELETE",
-    headers: authHeader()
-  }).then(loadProjects);
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("token")
+    }
+  })
+  .then(res => {
+    if (res.status === 204) {
+      alert("Deleted ✅");
+      loadProjects(); // refresh
+    } else {
+      throw new Error("Delete failed");
+    }
+  })
+  .catch(err => {
+    console.error("DELETE ERROR:", err);
+    alert("Error deleting project ❌");
+  });
 }
 
 /* CREATE USER */
