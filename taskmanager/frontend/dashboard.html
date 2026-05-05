@@ -1,51 +1,80 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Task Dashboard</title>
-
-  <!-- 🔗 External CSS -->
+  <title>Task Manager</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<div class="card">
+<div class="container">
 
-  <h2>✨ Task Dashboard</h2>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h2>⚡ TaskApp</h2>
 
-  <!-- 📊 Stats -->
-  <div id="dashboard"></div>
-
-  <!-- ➕ Create Task -->
-  <div class="section">
-    <h3>Create Task</h3>
-
-    <input id="taskTitle" placeholder="Task Title">
-    <input id="taskDesc" placeholder="Description">
-    <input id="taskDeadline" type="date">
-
-    <button onclick="createTask()">+ Create Task</button>
+    <button onclick="showSection('dashboard')">Dashboard</button>
+    <button onclick="showSection('projects')">Projects</button>
+    <button onclick="showSection('tasks')">Tasks</button>
+    <button onclick="logout()">Logout</button>
   </div>
 
-  <!-- 📋 Tasks -->
-  <div class="section">
-    <h3>Your Tasks</h3>
+  <!-- Main -->
+  <div class="main">
 
-    <ul id="tasks"></ul>
+    <!-- DASHBOARD -->
+    <div id="dashboardSection" class="card">
+      <h3>Dashboard</h3>
+      <div id="dashboard" class="grid"></div>
+    </div>
+
+    <!-- CREATE PROJECT -->
+    <div id="projectSection" class="card">
+      <h3>Create Project</h3>
+
+      <input id="projectTitle" placeholder="Project Title">
+      <input id="projectDesc" placeholder="Description">
+
+      <button onclick="createProject()">Create Project</button>
+    </div>
+
+    <!-- CREATE TASK -->
+    <div id="taskSection" class="card">
+      <h3>Create Task</h3>
+
+      <input id="taskTitle" placeholder="Title">
+      <input id="taskDesc" placeholder="Description">
+
+      <select id="status">
+        <option value="pending">Pending</option>
+        <option value="in_progress">In Progress</option>
+        <option value="done">Done</option>
+      </select>
+
+      <select id="assignedUser"></select>
+      <select id="projectSelect"></select>
+
+      <input type="date" id="deadline">
+
+      <button onclick="createTask()">Create Task</button>
+    </div>
+
+    <!-- TASK LIST -->
+    <div class="card">
+      <h3>Tasks</h3>
+      <div id="tasks"></div>
+    </div>
+
   </div>
-
-  <!-- 🚪 Logout -->
-  <button onclick="logout()">Logout</button>
-
 </div>
 
-<!-- 🔗 Script -->
 <script src="script.js"></script>
 
 <script>
-  // 🔥 Auto load data on page open
   loadDashboard();
   loadTasks();
+  loadUsers();
+  loadProjects();
 </script>
 
 </body>
