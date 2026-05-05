@@ -51,6 +51,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
 ]
 
 ROOT_URLCONF = "taskmanager.urls"
@@ -78,17 +79,13 @@ WSGI_APPLICATION = "taskmanager.wsgi.application"
 
 
 
-import os
-import dj_database_url
 from dotenv import load_dotenv
+import os
 
 load_dotenv()
 
-
 DATABASES = {
-    'default': dj_database_url.parse(
-        os.getenv("DATABASE_URL", "sqlite:///db.sqlite3")
-    )
+    'default': dj_database_url.parse(os.environ["DATABASE_URL"])
 }
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
