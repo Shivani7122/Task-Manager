@@ -1,6 +1,6 @@
 django
 djangorestframework
-pymysql
+pymysql==1.1.0
 cryptography
 dj-database-url
 python-dotenv
