@@ -6,21 +6,30 @@ function login() {
   const password = document.getElementById("password").value;
   const msg = document.getElementById("msg");
 
-  fetch(`${API_URL}/api/auth/login/`, {
+  msg.innerText = "Logging in...";
+
+  fetch(`${API_URL}/api/auth/login/`, {   // ⚠️ यही endpoint use करना है
     method: "POST",
-    headers: {"Content-Type": "application/json"},
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password })
   })
-  .then(res => res.json())
-  .then(data => {
-    if (data.access) {
-      localStorage.setItem("token", data.access);
-      window.location.href = "dashboard.html";
-    } else {
-      msg.innerText = "Invalid credentials";
+  .then(async res => {
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.detail || "Login failed");
     }
+
+    return data;
   })
-  .catch(() => msg.innerText = "Server error");
+  .then(data => {
+    localStorage.setItem("token", data.access);
+    window.location.href = "dashboard.html";
+  })
+  .catch(err => {
+    console.error(err);
+    msg.innerText = "Invalid username or password";
+  });
 }
 
 
