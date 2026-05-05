@@ -84,11 +84,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+import dj_database_url
+
 DATABASES = {
-    'default': dj_database_url.parse(
-        os.getenv("DATABASE_URL"),
-        conn_max_age=600
-    )
+    'default': dj_database_url.parse(os.getenv("DATABASE_URL"))
 }
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
