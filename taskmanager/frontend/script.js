@@ -82,22 +82,27 @@ function initApp() {
     return;
   }
 
-  // 🔥 Role-based UI
-  if (role !== "admin") {
+  // 🔐 MEMBER LIMITATION
+  if (role === "member") {
     document.getElementById("projectSection").style.display = "none";
     document.getElementById("userSection").style.display = "none";
+
+    // hide sidebar buttons
+    document.querySelector("button[onclick*='projects']").style.display = "none";
+    document.querySelector("button[onclick*='users']").style.display = "none";
   }
 
   loadUsers();
   loadProjects();
   loadTasks();
   loadDashboard();
+
+  showSection("dashboard");
 }
 
 /* ================= DASHBOARD ================= */
 function loadDashboard() {
-  document.getElementById("dashboard").innerHTML =
-    `<div class="loader"></div>`;
+  document.getElementById("dashboard").innerHTML = `<div class="loader"></div>`;
 
   fetch(`${API_URL}/api/dashboard/`, {
     headers: authHeader()
@@ -105,9 +110,10 @@ function loadDashboard() {
     .then(res => res.json())
     .then(d => {
       document.getElementById("dashboard").innerHTML = `
-        <div>Total: ${d.total_tasks}</div>
-        <div>Done: ${d.completed_tasks}</div>
-        <div>Pending: ${d.pending_tasks}</div>
+        <div>📌 Total Tasks: ${d.total_tasks}</div>
+        <div>✅ Completed: ${d.completed_tasks}</div>
+        <div>⏳ Pending: ${d.pending_tasks}</div>
+        <div>⚠️ Overdue: ${d.overdue_tasks}</div>
       `;
     });
 }
@@ -132,61 +138,142 @@ function loadUsers() {
       const list = document.getElementById("usersList");
       if (list) {
         list.innerHTML = users.map(u => `
-          <div class="card-item">
-            <div>
-              <b>${u.username}</b> (${u.role})<br>
-              Active: ${u.is_active ? "Yes" : "No"} |
-              Superuser: ${u.is_superuser ? "Yes" : "No"}
-            </div>
-            <button onclick="deleteUser(${u.id})">❌</button>
+        <div class="card-item">
+          <div>
+            <b>${u.username}</b> (${u.role})
+            <br>
+            <span style="color:${u.is_active ? 'lime' : 'gray'}">●</span>
+            ${u.is_active ? "Active" : "Inactive"} |
+            ${u.is_superuser ? "⭐ Superuser" : ""}
           </div>
-        `).join("");
+
+          <button onclick="deleteUser(${u.id})">❌</button>
+        </div>
+      `).join("");
       }
     });
 }
 
 /* ================= PROJECT ================= */
 function loadProjects() {
+  const container = document.getElementById("projectList");
+
+  // 🔄 Loader
+  container.innerHTML = `<div class="loader"></div>`;
+
   fetch(`${API_URL}/api/projects/`, {
     headers: authHeader()
   })
     .then(res => res.json())
     .then(data => {
-      const container = document.getElementById("projectList");
+
+      const role = localStorage.getItem("role");
+
+      // ❌ No projects
+      if (!data.length) {
+        container.innerHTML = `<p style="opacity:0.6">No projects found</p>`;
+        return;
+      }
+
+      // 🔥 Render list
       container.innerHTML = data.map(p => `
         <div class="card-item">
-          <span>${p.title}</span>
-          <button class="delete-btn"
-            onclick="deleteProject(${p.id})">❌</button>
+
+          <div>
+            <b>${p.title}</b><br>
+            <small style="opacity:0.6">${p.description || ""}</small>
+          </div>
+
+          <!-- 🔐 Admin only delete -->
+          ${role === "admin"
+            ? `<button class="delete-btn"
+                onclick="deleteProject(${p.id})">❌</button>`
+            : ""}
+
         </div>
       `).join("");
+
+      // 🔥 Dropdown for task creation
+      const dropdown = document.getElementById("projectSelect");
+      if (dropdown) {
+        dropdown.innerHTML = data.map(p =>
+          `<option value="${p.id}">${p.title}</option>`
+        ).join("");
+      }
+
+    })
+    .catch(() => {
+      container.innerHTML = `<p style="color:red">Error loading projects</p>`;
     });
 }
 
 /* ================= TASK ================= */
 function loadTasks() {
+  const container = document.getElementById("tasksDiv");
+
+  // 🔄 Loader
+  container.innerHTML = `<div class="loader"></div>`;
+
   fetch(`${API_URL}/api/tasks/`, {
     headers: authHeader()
   })
     .then(res => res.json())
     .then(tasks => {
-      document.getElementById("tasksDiv").innerHTML = tasks.map(t => `
+
+      const role = localStorage.getItem("role");
+      const userId = localStorage.getItem("user_id");
+
+      // 🔐 Member → only own tasks
+      let filteredTasks = tasks;
+      if (role === "member") {
+        filteredTasks = tasks.filter(t => t.assigned_to == userId);
+      }
+
+      // ❌ No tasks case
+      if (filteredTasks.length === 0) {
+        container.innerHTML = `<p style="opacity:0.6">No tasks found</p>`;
+        return;
+      }
+
+      container.innerHTML = filteredTasks.map(t => `
         <div class="task-card">
+
           <h4>${t.title}</h4>
           <p>${t.description}</p>
-          <small>👤 ${t.assigned_to_username} | 📦 ${t.project_title}</small>
-          <div class="status ${t.status}">${t.status}</div>
 
+          <small>
+            👤 ${t.assigned_to_username} | 📦 ${t.project_title}
+          </small>
+
+          <div class="status ${t.status}">
+            ${formatStatus(t.status)}
+          </div>
+
+          <!-- 🔥 STATUS DROPDOWN -->
           <select onchange="updateTask(${t.id}, this.value)">
-            <option value="pending">Pending</option>
-            <option value="in_progress">In Progress</option>
-            <option value="done">Done</option>
+            <option value="pending" ${t.status==="pending"?"selected":""}>Pending</option>
+            <option value="in_progress" ${t.status==="in_progress"?"selected":""}>In Progress</option>
+            <option value="done" ${t.status==="done"?"selected":""}>Done</option>
           </select>
 
-          <button onclick="deleteTask(${t.id})">❌</button>
+          <!-- 🔐 Delete only for admin -->
+          ${role === "admin" ? 
+            `<button onclick="deleteTask(${t.id})">❌</button>` 
+            : ""}
+
         </div>
       `).join("");
+    })
+    .catch(() => {
+      container.innerHTML = `<p style="color:red">Error loading tasks</p>`;
     });
+}
+
+function formatStatus(status) {
+  if (status === "pending") return "⏳ Pending";
+  if (status === "in_progress") return "🚀 In Progress";
+  if (status === "done") return "✅ Completed";
+  return status;
 }
 
 /* ================= CREATE TASK ================= */
@@ -298,10 +385,21 @@ function authHeader() {
 
 /* ================= NAV ================= */
 function showSection(name) {
-  dashboardSection.style.display = name === "dashboard" ? "block" : "none";
-  projectSection.style.display = name === "projects" ? "block" : "none";
-  taskSection.style.display = name === "tasks" ? "block" : "none";
-  userSection.style.display = name === "users" ? "block" : "none";
+
+  const sections = {
+    dashboard: "dashboardSection",
+    projects: "projectSection",
+    tasks: "taskSection",
+    users: "userSection"
+  };
+
+  // hide all
+  Object.values(sections).forEach(id => {
+    document.getElementById(id).style.display = "none";
+  });
+
+  // show selected
+  document.getElementById(sections[name]).style.display = "block";
 }
 
 /* ================= LOGOUT ================= */
