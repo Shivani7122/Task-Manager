@@ -1,4 +1,4 @@
-const API_URL = "https://worthy-dream-production-a5ca.up.railway.app";
+const API_URL = "https://vigilant-guide-q7px6w69r7rh4q7g-8000.app.github.dev";
 
 /* ================= LOGIN ================= */
 function login() {
