@@ -1,15 +1,14 @@
 const API_URL = "https://vigilant-guide-q7px6w69r7rh4q7g-8000.app.github.dev";
 
-/* ================= LOGIN ================= */
+/* ========= LOGIN ========= */
 function login() {
-  const username = document.getElementById("username").value;
-  const password = document.getElementById("password").value;
-  const msg = document.getElementById("msg");
-
   fetch(`${API_URL}/api/auth/login/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password })
+    body: JSON.stringify({
+      username: username.value,
+      password: password.value
+    })
   })
   .then(async res => {
     const data = await res.json();
@@ -22,36 +21,33 @@ function login() {
     localStorage.setItem("token", data.access);
     window.location.href = "dashboard.html";
   })
-  .catch(() => {
-    msg.innerText = "Server error";
-  });
+  .catch(() => msg.innerText = "Server error");
 }
 
-/* ================= TOKEN ================= */
+/* ========= TOKEN ========= */
 function getToken() {
   return localStorage.getItem("token");
 }
 
-/* ================= ROLE ================= */
+/* ========= ROLE ========= */
 function getUserRole() {
   const token = getToken();
   if (!token) return null;
-
-  const payload = JSON.parse(atob(token.split('.')[1]));
-  return payload.role;
+  return JSON.parse(atob(token.split('.')[1])).role;
 }
 
-/* ================= APPLY ROLE ================= */
+/* ========= UI CONTROL ========= */
 function applyRoleUI() {
   const role = getUserRole();
 
   if (role === "member") {
-    document.getElementById("projectSection").style.display = "none";
-    document.getElementById("taskSection").style.display = "none";
+    projectSection.style.display = "none";
+    taskSection.style.display = "none";
+    userSection.style.display = "none";
   }
 }
 
-/* ================= DASHBOARD ================= */
+/* ========= DASHBOARD ========= */
 function loadDashboard() {
   fetch(`${API_URL}/api/dashboard/`, {
     headers: { Authorization: "Bearer " + getToken() }
@@ -67,7 +63,7 @@ function loadDashboard() {
   });
 }
 
-/* ================= TASKS ================= */
+/* ========= TASKS ========= */
 function loadTasks() {
   fetch(`${API_URL}/api/tasks/`, {
     headers: { Authorization: "Bearer " + getToken() }
@@ -82,17 +78,12 @@ function loadTasks() {
         <div class="task">
           <div>
             <b>${t.title}</b><br>
-            <small>${t.description || ""}</small><br>
             <span class="${t.status}">${t.status}</span>
           </div>
 
           <div>
-            ${
-              role === "admin"
-                ? `<button onclick="deleteTask(${t.id})">🗑</button>`
-                : ""
-            }
-            <button onclick="updateStatus(${t.id}, 'done')">✔</button>
+            ${role === "admin" ? `<button onclick="deleteTask(${t.id})">🗑</button>` : ""}
+            <button onclick="updateStatus(${t.id},'done')">✔</button>
           </div>
         </div>
       `;
@@ -102,12 +93,9 @@ function loadTasks() {
   });
 }
 
-/* ================= CREATE TASK ================= */
+/* ========= CREATE TASK ========= */
 function createTask() {
-  if (getUserRole() !== "admin") {
-    alert("Only admin can create tasks");
-    return;
-  }
+  if (getUserRole() !== "admin") return alert("Admin only");
 
   fetch(`${API_URL}/api/tasks/create/`, {
     method: "POST",
@@ -123,29 +111,21 @@ function createTask() {
       project: projectSelect.value,
       deadline: deadline.value
     })
-  })
-  .then(() => {
+  }).then(() => {
     loadTasks();
     loadDashboard();
   });
 }
 
-/* ================= DELETE TASK ================= */
+/* ========= DELETE TASK ========= */
 function deleteTask(id) {
-  if (getUserRole() !== "admin") {
-    alert("Only admin can delete");
-    return;
-  }
-
   fetch(`${API_URL}/api/tasks/${id}/delete/`, {
     method: "DELETE",
-    headers: {
-      Authorization: "Bearer " + getToken()
-    }
+    headers: { Authorization: "Bearer " + getToken() }
   }).then(() => loadTasks());
 }
 
-/* ================= UPDATE STATUS ================= */
+/* ========= UPDATE ========= */
 function updateStatus(id, status) {
   fetch(`${API_URL}/api/tasks/${id}/update/`, {
     method: "PUT",
@@ -157,7 +137,7 @@ function updateStatus(id, status) {
   }).then(() => loadTasks());
 }
 
-/* ================= USERS ================= */
+/* ========= USERS ========= */
 function loadUsers() {
   fetch(`${API_URL}/api/users/`, {
     headers: { Authorization: "Bearer " + getToken() }
@@ -170,7 +150,49 @@ function loadUsers() {
   });
 }
 
-/* ================= PROJECTS ================= */
+/* ========= USER LIST ========= */
+function loadUsersList() {
+  if (getUserRole() !== "admin") return;
+
+  fetch(`${API_URL}/api/users/`, {
+    headers: { Authorization: "Bearer " + getToken() }
+  })
+  .then(res => res.json())
+  .then(users => {
+    usersList.innerHTML = users.map(u => `
+      <div class="task">
+        <span>${u.username} (${u.role})</span>
+        <button onclick="deleteUser(${u.id})">🗑</button>
+      </div>
+    `).join("");
+  });
+}
+
+function createUser() {
+  fetch(`${API_URL}/api/users/create/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + getToken()
+    },
+    body: JSON.stringify({
+      username: newUsername.value,
+      password: newPassword.value,
+      role: newRole.value,
+      is_superuser: isSuperuser.checked,
+      is_active: isActive.checked
+    })
+  }).then(() => loadUsersList());
+}
+
+function deleteUser(id) {
+  fetch(`${API_URL}/api/users/${id}/delete/`, {
+    method: "DELETE",
+    headers: { Authorization: "Bearer " + getToken() }
+  }).then(() => loadUsersList());
+}
+
+/* ========= PROJECTS ========= */
 function loadProjects() {
   fetch(`${API_URL}/api/projects/`, {
     headers: { Authorization: "Bearer " + getToken() }
@@ -183,13 +205,22 @@ function loadProjects() {
   });
 }
 
-/* ================= CREATE PROJECT ================= */
-function createProject() {
-  if (getUserRole() !== "admin") {
-    alert("Only admin can create project");
-    return;
-  }
+function loadProjectList() {
+  fetch(`${API_URL}/api/projects/`, {
+    headers: { Authorization: "Bearer " + getToken() }
+  })
+  .then(res => res.json())
+  .then(data => {
+    projectList.innerHTML = data.map(p => `
+      <div class="task">
+        <span>${p.title}</span>
+        <button onclick="deleteProject(${p.id})">🗑</button>
+      </div>
+    `).join("");
+  });
+}
 
+function createProject() {
   fetch(`${API_URL}/api/projects/create/`, {
     method: "POST",
     headers: {
@@ -200,27 +231,37 @@ function createProject() {
       title: projectTitle.value,
       description: projectDesc.value
     })
-  }).then(() => loadProjects());
+  }).then(() => loadProjectList());
 }
 
-/* ================= NAVIGATION ================= */
+function deleteProject(id) {
+  fetch(`${API_URL}/api/projects/${id}/delete/`, {
+    method: "DELETE",
+    headers: { Authorization: "Bearer " + getToken() }
+  }).then(() => loadProjectList());
+}
+
+/* ========= NAV ========= */
 function showSection(name) {
-  dashboardSection.style.display = name === "dashboard" ? "block" : "none";
-  projectSection.style.display = name === "projects" ? "block" : "none";
-  taskSection.style.display = name === "tasks" ? "block" : "none";
+  dashboardSection.style.display = name==="dashboard"?"block":"none";
+  projectSection.style.display = name==="projects"?"block":"none";
+  taskSection.style.display = name==="tasks"?"block":"none";
+  userSection.style.display = name==="users"?"block":"none";
 }
 
-/* ================= LOGOUT ================= */
+/* ========= LOGOUT ========= */
 function logout() {
   localStorage.removeItem("token");
   window.location.href = "index.html";
 }
 
-/* ================= INIT ================= */
+/* ========= INIT ========= */
 function initApp() {
   applyRoleUI();
   loadDashboard();
   loadTasks();
   loadUsers();
   loadProjects();
+  loadProjectList();
+  loadUsersList();
 }

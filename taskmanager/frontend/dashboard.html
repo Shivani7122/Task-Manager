@@ -4,6 +4,7 @@
   <title>Dashboard</title>
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
 <div class="app-wrapper">
@@ -16,20 +17,21 @@
       <button onclick="showSection('dashboard')">Dashboard</button>
       <button onclick="showSection('projects')">Projects</button>
       <button onclick="showSection('tasks')">Tasks</button>
+      <button onclick="showSection('users')">Users</button>
       <button onclick="logout()">Logout</button>
     </div>
 
     <!-- Main -->
     <div class="main">
 
-      <!-- Dashboard -->
+      <!-- DASHBOARD -->
       <div id="dashboardSection" class="card">
         <h3>Dashboard</h3>
         <div id="dashboard" class="grid"></div>
       </div>
 
-      <!-- Create Project -->
-      <div id="projectSection" class="card">
+      <!-- PROJECT -->
+      <div id="projectSection" class="card" style="display:none;">
         <h3>Create Project</h3>
         <input id="projectTitle" placeholder="Project title">
         <input id="projectDesc" placeholder="Description">
@@ -39,8 +41,8 @@
         <div id="projectList"></div>
       </div>
 
-      <!-- Tasks -->
-      <div id="taskSection" class="card">
+      <!-- TASK -->
+      <div id="taskSection" class="card" style="display:none;">
         <h3>Create Task</h3>
 
         <input id="taskTitle" placeholder="Title">
@@ -54,6 +56,7 @@
 
         <select id="assignedUser"></select>
         <select id="projectSelect"></select>
+
         <input type="date" id="deadline">
 
         <button onclick="createTask()">Create Task</button>
@@ -62,18 +65,32 @@
         <div id="tasks"></div>
       </div>
 
+      <!-- USERS -->
+      <div id="userSection" class="card" style="display:none;">
+        <h3>Users (Admin)</h3>
+
+        <input id="newUsername" placeholder="Username">
+        <input id="newPassword" placeholder="Password">
+
+        <select id="newRole">
+          <option value="member">Member</option>
+          <option value="admin">Admin</option>
+        </select>
+
+        <label><input type="checkbox" id="isSuperuser"> Superuser</label>
+        <label><input type="checkbox" id="isActive" checked> Active</label>
+
+        <button onclick="createUser()">Add User</button>
+
+        <div id="usersList"></div>
+      </div>
+
     </div>
   </div>
 </div>
 
 <script src="script.js"></script>
 
-<script>
-loadDashboard();
-loadTasks();
-loadUsers();
-loadProjects();
-</script>
 <script>
   initApp();
 </script>
