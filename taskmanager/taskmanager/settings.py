@@ -148,7 +148,7 @@ CORS_ALLOW_HEADERS = [
     "content-type",
     "authorization",
 ]
-
+ALLOWED_HOSTS = ["*"]
 
 CSRF_TRUSTED_ORIGINS = [
     "https://worthy-dream-production-a5ca.up.railway.app"
