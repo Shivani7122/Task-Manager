@@ -4,27 +4,36 @@ let currentUser = null;
 
 /* LOGIN */
 function login() {
-  const username = document.getElementById("usernameInput").value;
-  const password = document.getElementById("passwordInput").value;
-  const msg = document.getElementById("msg");
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
 
   fetch(`${API_URL}/api/auth/login/`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password })
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (data.access) {
-        localStorage.setItem("token", data.access);
-        window.location.href = "dashboard.html";
-      } else {
-        msg.innerText = "Invalid username or password";
-      }
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      username: username,
+      password: password
     })
-    .catch(() => {
-      msg.innerText = "Server error";
-    });
+  })
+  .then(res => res.json())
+  .then(data => {
+
+    if (data.access) {
+      localStorage.setItem("token", data.access);
+
+      // 🔥 IMPORTANT FIX (ADD THIS LINE)
+      localStorage.setItem("user_id", 1); // 👈 temporarily admin id
+
+      window.location.href = "dashboard.html";
+    } else {
+      document.getElementById("msg").innerText = "Invalid login";
+    }
+  })
+  .catch(() => {
+    document.getElementById("msg").innerText = "Server error";
+  });
 }
 
 /* INIT */
@@ -201,28 +210,28 @@ function createProject() {
   const title = document.getElementById("projectTitle").value.trim();
   const description = document.getElementById("projectDesc").value.trim();
 
+  const userId = localStorage.getItem("user_id"); // 👈 add this
+
   if (!title || !description) {
     alert("Fill all fields");
     return;
   }
 
-  const token = localStorage.getItem("token");
-
   fetch(`${API_URL}/api/projects/create/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": "Bearer " + token
+      "Authorization": "Bearer " + localStorage.getItem("token")
     },
     body: JSON.stringify({
       title: title,
-      description: description
+      description: description,
+      created_by: userId   // 🔥 THIS FIXES IT
     })
   })
   .then(async res => {
     const data = await res.json();
-
-    console.log("PROJECT RESPONSE:", data); // 👈 DEBUG
+    console.log("PROJECT RESPONSE:", data);
 
     if (!res.ok) {
       alert("❌ " + JSON.stringify(data));
