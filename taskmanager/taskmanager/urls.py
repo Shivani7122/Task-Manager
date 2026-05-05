@@ -21,6 +21,8 @@ urlpatterns = [
     path("api/tasks/", TaskListView.as_view()),
     path("api/create-task/", TaskCreateView.as_view()),
     path("api/update-task/<int:pk>/", TaskUpdateView.as_view()),
+    path('api/delete-task/<int:pk>/', TaskDeleteView.as_view()),
+    path('api/delete-project/<int:pk>/', ProjectDeleteView.as_view()),
 
     # 📊 Dashboard
     path("api/dashboard/", DashboardView.as_view()),

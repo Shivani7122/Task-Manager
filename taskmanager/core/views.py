@@ -123,3 +123,28 @@ class UserListView(APIView):
     def get(self, request):
         users = User.objects.all()
         return Response(UserSerializer(users, many=True).data)
+
+class TaskDeleteView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, pk):
+        try:
+            task = Task.objects.get(id=pk)
+        except Task.DoesNotExist:
+            return Response({"error": "Not found"}, status=404)
+
+        if request.user.role != "admin":
+            return Response({"error": "Only admin can delete"}, status=403)
+
+        task.delete()
+        return Response({"message": "Deleted"})
+
+class ProjectDeleteView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, pk):
+        if request.user.role != "admin":
+            return Response({"error": "Only admin"}, status=403)
+
+        Project.objects.filter(id=pk).delete()
+        return Response({"message": "Deleted"})

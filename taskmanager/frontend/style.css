@@ -111,3 +111,41 @@ button {
 .pending { color: orange; }
 .in_progress { color: #38bdf8; }
 .done { color: #22c55e; }
+
+.task-card {
+  background: #1e293b;
+  padding: 15px;
+  border-radius: 12px;
+  margin-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: 0.2s;
+}
+
+.task-card:hover {
+  transform: translateY(-3px);
+  background: #273449;
+}
+
+.task-info h4 {
+  margin: 0;
+}
+
+.task-info p {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.status {
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.pending { background: orange; }
+.in_progress { background: #38bdf8; }
+.done { background: #22c55e; }
+
+.task-actions button {
+  margin-left: 6px;
+}

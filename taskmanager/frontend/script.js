@@ -58,29 +58,45 @@ function loadDashboard() {
 
 /* ================= TASKS ================= */
 function loadTasks() {
-  const token = localStorage.getItem("token");
-
-  fetch(`${API_URL}/api/tasks/`, {
-    headers: { Authorization: "Bearer " + token }
-  })
-  .then(res => res.json())
+  authFetch(`${API_URL}/api/tasks/`)
   .then(tasks => {
     let html = "";
 
     tasks.forEach(t => {
       html += `
-        <div class="task">
-          <span>${t.title} <b class="${t.status}">(${t.status})</b></span>
-          <button onclick="updateStatus(${t.id}, 'done')">✔</button>
+        <div class="task-card">
+          <div class="task-info">
+            <h4>${t.title}</h4>
+            <p>
+              Project: ${t.project_name || t.project} |
+              Assigned: ${t.assigned_to_name || t.assigned_to} |
+              Deadline: ${t.deadline}
+            </p>
+            <span class="status ${t.status}">${t.status}</span>
+          </div>
+
+          <div class="task-actions">
+            <button onclick="updateStatus(${t.id},'done')">✔</button>
+            <button onclick="deleteTask(${t.id})">🗑</button>
+          </div>
         </div>
       `;
     });
 
     document.getElementById("tasks").innerHTML = html;
-  })
-  .catch(err => console.error("Tasks error:", err));
+  });
 }
 
+function deleteTask(id) {
+  if (!confirm("Delete task?")) return;
+
+  authFetch(`${API_URL}/api/delete-task/${id}/`, {
+    method: "DELETE"
+  }).then(() => {
+    loadTasks();
+    loadDashboard();
+  });
+}
 
 /* ================= USERS ================= */
 function loadUsers() {
