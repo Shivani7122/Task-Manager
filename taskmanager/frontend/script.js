@@ -98,22 +98,38 @@ function loadTasks() {
     const role = getUserRole();
 
     tasksDiv.innerHTML = tasks.map(t => `
-      <div class="task">
-        <div>
-          <b>${t.title}</b><br>
-          <small>${t.description || ""}</small><br>
-          👤 ${t.assigned_to_username || "N/A"} <br>
-          📦 ${t.project_title || "N/A"} <br>
-          <span class="${t.status}">${t.status}</span>
+      <div class="task-card">
+
+        <div class="task-info">
+          <h4>${t.title}</h4>
+          <p>${t.description || ""}</p>
+
+          <div class="meta">
+            <span>👤 ${t.assigned_to_username || "-"}</span>
+            <span>📦 ${t.project_title || "-"}</span>
+          </div>
+
+          <span class="status ${t.status}">
+            ${t.status.replace("_", " ")}
+          </span>
         </div>
 
-        <div>
-          ${role === "admin" ? `<button onclick="deleteTask(${t.id})">🗑</button>` : ""}
+        <div class="task-actions">
 
-          <button onclick="updateStatus(${t.id}, 'pending')">P</button>
-          <button onclick="updateStatus(${t.id}, 'in_progress')">IP</button>
-          <button onclick="updateStatus(${t.id}, 'done')">✔</button>
+          <!-- STATUS DROPDOWN -->
+          <select onchange="updateStatus(${t.id}, this.value)">
+            <option disabled selected>Update</option>
+            <option value="pending">Pending</option>
+            <option value="in_progress">In Progress</option>
+            <option value="done">Done</option>
+          </select>
+
+          ${role === "admin" ? `
+            <button class="danger" onclick="deleteTask(${t.id})">Delete</button>
+          ` : ""}
+
         </div>
+
       </div>
     `).join("");
   });
@@ -190,22 +206,28 @@ function loadUsersList() {
   })
   .then(res => res.json())
   .then(users => {
+
     usersList.innerHTML = users.map(u => `
-      <div class="task">
-        <div>
-          <b>${u.username}</b><br>
-          Role: ${u.role} <br>
-          Status: ${u.is_active ? "Active" : "Inactive"}
-        </div>
+      <div class="user-card">
 
         <div>
-          <button onclick="changeRole(${u.id}, 'admin')">A</button>
-          <button onclick="changeRole(${u.id}, 'member')">M</button>
-          <button onclick="toggleUserStatus(${u.id}, ${u.is_active})">⚡</button>
-          <button onclick="deleteUser(${u.id})">🗑</button>
+          <b>${u.username}</b>
+          <p>Role: ${u.role}</p>
+          <p>Status: ${u.is_active ? "Active" : "Inactive"}</p>
         </div>
+
+        <div class="user-actions">
+          <button onclick="changeRole(${u.id}, 'admin')">Make Admin</button>
+          <button onclick="changeRole(${u.id}, 'member')">Make Member</button>
+          <button onclick="toggleUserStatus(${u.id}, ${u.is_active})">
+            ${u.is_active ? "Deactivate" : "Activate"}
+          </button>
+          <button class="danger" onclick="deleteUser(${u.id})">Delete</button>
+        </div>
+
       </div>
     `).join("");
+
   });
 }
 

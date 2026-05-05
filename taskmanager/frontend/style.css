@@ -1,41 +1,44 @@
-/* ================= RESET ================= */
+/* ===== RESET ===== */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-/* ================= BODY ================= */
+/* ===== BODY ===== */
 body {
   font-family: "Segoe UI", sans-serif;
-  background: radial-gradient(circle at top, #0f172a, #020617);
+  background: linear-gradient(135deg, #020617, #0f172a);
   color: white;
 }
 
-/* ================= LOGIN PAGE ================= */
-body.login-page {
+/* ===== LOGIN PAGE ===== */
+.login-page {
+  height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
 }
 
-/* LOGIN CARD */
+.login-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .login-card {
-  width: 360px;
+  width: 350px;
   padding: 30px;
+  background: #1e293b;
   border-radius: 16px;
   text-align: center;
-
-  background: rgba(30, 41, 59, 0.95);
-  backdrop-filter: blur(12px);
-
-  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  box-shadow: 0 15px 50px rgba(0,0,0,0.5);
   animation: fadeIn 0.6s ease;
 }
 
 .login-card h2 {
-  margin-bottom: 10px;
+  margin-bottom: 5px;
 }
 
 .subtitle {
@@ -44,59 +47,24 @@ body.login-page {
   margin-bottom: 20px;
 }
 
-/* INPUT */
-.login-card input {
-  width: 100%;
-  padding: 12px;
-  margin: 10px 0;
-  border-radius: 10px;
-  border: none;
-  background: #0f172a;
-  color: white;
-}
-
-/* BUTTON */
-.login-card button {
-  margin-top: 10px;
-  width: 100%;
-  padding: 12px;
-  border-radius: 10px;
-  border: none;
-  background: linear-gradient(135deg, #6366f1, #4f46e5);
-  color: white;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-.login-card button:hover {
-  transform: scale(1.05);
-}
-
-/* ERROR */
-#msg {
-  margin-top: 12px;
-  font-size: 14px;
-  color: #f87171;
-}
-
-/* ================= APP LAYOUT ================= */
+/* ===== APP WRAPPER ===== */
 .app-wrapper {
   max-width: 1200px;
   margin: auto;
   padding: 20px;
 }
 
-/* MAIN CONTAINER */
+/* ===== CONTAINER ===== */
 .container {
   display: flex;
   height: 90vh;
   border-radius: 16px;
   overflow: hidden;
   background: #111827;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  box-shadow: 0 15px 50px rgba(0,0,0,0.6);
 }
 
-/* ================= SIDEBAR ================= */
+/* ===== SIDEBAR ===== */
 .sidebar {
   width: 220px;
   background: #1e293b;
@@ -110,13 +78,12 @@ body.login-page {
 .sidebar button {
   width: 100%;
   margin-bottom: 10px;
-  padding: 10px;
-  border-radius: 8px;
-  border: none;
   background: transparent;
+  border: none;
   color: #cbd5f5;
   text-align: left;
-  cursor: pointer;
+  padding: 10px;
+  border-radius: 8px;
   transition: 0.2s;
 }
 
@@ -124,22 +91,23 @@ body.login-page {
   background: #334155;
 }
 
-/* ================= MAIN ================= */
+/* ===== MAIN ===== */
 .main {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
 }
 
-/* ================= CARDS ================= */
+/* ===== CARD ===== */
 .card {
   background: #1e293b;
   padding: 20px;
   border-radius: 14px;
   margin-bottom: 20px;
+  animation: fadeIn 0.5s ease;
 }
 
-/* ================= GRID ================= */
+/* ===== DASHBOARD GRID ===== */
 .grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -151,9 +119,10 @@ body.login-page {
   padding: 15px;
   border-radius: 10px;
   text-align: center;
+  font-weight: bold;
 }
 
-/* ================= INPUTS ================= */
+/* ===== INPUTS ===== */
 input, select {
   width: 100%;
   padding: 10px;
@@ -164,7 +133,7 @@ input, select {
   color: white;
 }
 
-/* ================= BUTTON ================= */
+/* ===== BUTTON ===== */
 button {
   padding: 10px;
   border-radius: 8px;
@@ -176,48 +145,113 @@ button {
 }
 
 button:hover {
-  transform: scale(1.03);
+  transform: scale(1.05);
 }
 
-/* ================= TASK CARD ================= */
+/* ===== DANGER BUTTON ===== */
+.danger {
+  background: #ef4444;
+}
+
+/* ===== TASK CARD ===== */
 .task-card {
-  background: #334155;
-  padding: 15px;
+  background: #1f2937;
+  padding: 18px;
   border-radius: 12px;
+  margin-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  transition: 0.3s;
+}
+
+.task-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+}
+
+.task-info h4 {
+  margin-bottom: 5px;
+}
+
+.task-info p {
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+/* META INFO */
+.meta {
+  font-size: 12px;
+  color: #94a3b8;
+  display: flex;
+  gap: 12px;
+  margin-top: 5px;
+}
+
+/* STATUS */
+.status {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.pending {
+  background: orange;
+}
+
+.in_progress {
+  background: #38bdf8;
+}
+
+.done {
+  background: #22c55e;
+}
+
+/* TASK ACTIONS */
+.task-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ===== USER CARD ===== */
+.user-card {
+  background: #1f2937;
+  padding: 15px;
   margin-top: 10px;
+  border-radius: 10px;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.task-left h4 {
-  margin-bottom: 5px;
-}
-
-.task-left p {
+.user-card p {
   font-size: 13px;
-  color: #94a3b8;
+  color: #9ca3af;
 }
 
-.task-actions button {
-  margin-left: 5px;
+.user-actions {
+  display: flex;
+  gap: 6px;
 }
 
-/* ================= STATUS COLORS ================= */
-.status.pending {
-  color: orange;
+/* ===== ERROR MESSAGE ===== */
+#msg {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #f87171;
 }
 
-.status.in_progress {
-  color: #38bdf8;
-}
-
-.status.done {
-  color: #22c55e;
-}
-
-/* ================= ANIMATION ================= */
+/* ===== ANIMATION ===== */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px);}
-  to { opacity: 1; transform: translateY(0);}
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
