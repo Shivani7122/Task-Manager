@@ -1,24 +1,49 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Dashboard</title>
+  <title>Task Dashboard</title>
+
+  <!-- 🔗 External CSS -->
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
 <div class="card">
-  <h2>Dashboard</h2>
 
+  <h2>✨ Task Dashboard</h2>
+
+  <!-- 📊 Stats -->
   <div id="dashboard"></div>
 
-  <h3>Tasks</h3>
-  <ul id="tasks"></ul>
+  <!-- ➕ Create Task -->
+  <div class="section">
+    <h3>Create Task</h3>
 
+    <input id="taskTitle" placeholder="Task Title">
+    <input id="taskDesc" placeholder="Description">
+    <input id="taskDeadline" type="date">
+
+    <button onclick="createTask()">+ Create Task</button>
+  </div>
+
+  <!-- 📋 Tasks -->
+  <div class="section">
+    <h3>Your Tasks</h3>
+
+    <ul id="tasks"></ul>
+  </div>
+
+  <!-- 🚪 Logout -->
   <button onclick="logout()">Logout</button>
+
 </div>
 
+<!-- 🔗 Script -->
 <script src="script.js"></script>
+
 <script>
+  // 🔥 Auto load data on page open
   loadDashboard();
   loadTasks();
 </script>
