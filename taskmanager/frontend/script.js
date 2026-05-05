@@ -1,25 +1,18 @@
 const API_URL = "https://vigilant-guide-q7px6w69r7rh4q7g-8000.app.github.dev";
 
-/* LOGIN */
+/* ================= LOGIN ================= */
 function login() {
   const username = document.getElementById("username").value;
   const password = document.getElementById("password").value;
   const msg = document.getElementById("msg");
 
-  if (!username || !password) {
-    msg.innerText = "Please enter username & password";
-    return;
-  }
-
   fetch(`${API_URL}/api/login/`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {"Content-Type": "application/json"},
     body: JSON.stringify({ username, password })
   })
   .then(res => res.json())
   .then(data => {
-    console.log(data);  // 🔥 debug
-
     if (data.access) {
       localStorage.setItem("token", data.access);
       window.location.href = "dashboard.html";
@@ -27,129 +20,193 @@ function login() {
       msg.innerText = "Invalid credentials";
     }
   })
-  .catch(err => {
-    console.error(err);
+  .catch(() => {
     msg.innerText = "Server error";
   });
 }
 
-/* DASHBOARD */
+
+/* ================= DASHBOARD ================= */
 function loadDashboard() {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    window.location.href = "index.html";
+    return;
+  }
+
   fetch(`${API_URL}/api/dashboard/`, {
-    headers: { Authorization: "Bearer " + localStorage.getItem("token") }
+    headers: { Authorization: "Bearer " + token }
   })
-  .then(res => res.json())
-  .then(d => {
-    dashboard.innerHTML = `
-      <div>Total<br>${d.total_tasks}</div>
-      <div>Completed<br>${d.completed_tasks}</div>
-      <div>Pending<br>${d.pending_tasks}</div>
-      <div>Overdue<br>${d.overdue_tasks}</div>
+  .then(res => {
+    if (res.status === 401) {
+      logout();
+    }
+    return res.json();
+  })
+  .then(data => {
+    document.getElementById("dashboard").innerHTML = `
+      <div>Total<br>${data.total_tasks}</div>
+      <div>Completed<br>${data.completed_tasks}</div>
+      <div>Pending<br>${data.pending_tasks}</div>
+      <div>Overdue<br>${data.overdue_tasks}</div>
     `;
-  });
+  })
+  .catch(err => console.error("Dashboard error:", err));
 }
 
-/* TASKS */
+
+/* ================= TASKS ================= */
 function loadTasks() {
+  const token = localStorage.getItem("token");
+
   fetch(`${API_URL}/api/tasks/`, {
-    headers: { Authorization: "Bearer " + localStorage.getItem("token") }
+    headers: { Authorization: "Bearer " + token }
   })
   .then(res => res.json())
   .then(tasks => {
     let html = "";
+
     tasks.forEach(t => {
       html += `
         <div class="task">
           <span>${t.title} <b class="${t.status}">(${t.status})</b></span>
-          <button onclick="updateStatus(${t.id},'done')">✔</button>
+          <button onclick="updateStatus(${t.id}, 'done')">✔</button>
         </div>
       `;
     });
-    tasksDiv.innerHTML = html;
-  });
+
+    document.getElementById("tasks").innerHTML = html;
+  })
+  .catch(err => console.error("Tasks error:", err));
 }
 
-/* USERS */
+
+/* ================= USERS ================= */
 function loadUsers() {
+  const token = localStorage.getItem("token");
+
   fetch(`${API_URL}/api/users/`, {
-    headers: { Authorization: "Bearer " + localStorage.getItem("token") }
+    headers: { Authorization: "Bearer " + token }
   })
   .then(res => res.json())
-  .then(data => {
-    assignedUser.innerHTML = data.map(u =>
-      `<option value="${u.id}">${u.username}</option>`
-    ).join("");
-  });
+  .then(users => {
+    let html = "";
+    users.forEach(u => {
+      html += `<option value="${u.id}">${u.username}</option>`;
+    });
+
+    document.getElementById("assignedUser").innerHTML = html;
+  })
+  .catch(err => console.error("Users error:", err));
 }
 
-/* PROJECTS */
+
+/* ================= PROJECTS ================= */
 function loadProjects() {
+  const token = localStorage.getItem("token");
+
   fetch(`${API_URL}/api/projects/`, {
-    headers: { Authorization: "Bearer " + localStorage.getItem("token") }
+    headers: { Authorization: "Bearer " + token }
   })
   .then(res => res.json())
   .then(data => {
-    projectSelect.innerHTML = data.map(p =>
-      `<option value="${p.id}">${p.title}</option>`
-    ).join("");
-  });
+    let html = "";
+
+    data.forEach(p => {
+      html += `<option value="${p.id}">${p.title}</option>`;
+    });
+
+    document.getElementById("projectSelect").innerHTML = html;
+  })
+  .catch(err => console.error("Projects error:", err));
 }
 
-/* CREATE TASK */
+
+/* ================= CREATE TASK ================= */
 function createTask() {
+  const token = localStorage.getItem("token");
+
+  const data = {
+    title: document.getElementById("taskTitle").value,
+    description: document.getElementById("taskDesc").value,
+    status: document.getElementById("status").value,
+    assigned_to: document.getElementById("assignedUser").value,
+    project: document.getElementById("projectSelect").value,
+    deadline: document.getElementById("deadline").value
+  };
+
   fetch(`${API_URL}/api/create-task/`, {
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      Authorization:"Bearer "+localStorage.getItem("token")
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
     },
-    body:JSON.stringify({
-      title:taskTitle.value,
-      description:taskDesc.value,
-      status:status.value,
-      assigned_to:assignedUser.value,
-      project:projectSelect.value,
-      deadline:deadline.value
-    })
-  }).then(()=>{loadTasks();loadDashboard();});
+    body: JSON.stringify(data)
+  })
+  .then(() => {
+    loadTasks();
+    loadDashboard();
+  })
+  .catch(err => console.error("Create task error:", err));
 }
 
-/* CREATE PROJECT */
+
+/* ================= CREATE PROJECT ================= */
 function createProject() {
+  const token = localStorage.getItem("token");
+
   fetch(`${API_URL}/api/create-project/`, {
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      Authorization:"Bearer "+localStorage.getItem("token")
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
     },
-    body:JSON.stringify({
-      title:projectTitle.value,
-      description:projectDesc.value
+    body: JSON.stringify({
+      title: document.getElementById("projectTitle").value,
+      description: document.getElementById("projectDesc").value
     })
-  }).then(()=>loadProjects());
+  })
+  .then(() => loadProjects())
+  .catch(err => console.error("Project error:", err));
 }
 
-/* UPDATE */
-function updateStatus(id,status){
-  fetch(`${API_URL}/api/update-task/${id}/`,{
-    method:"PUT",
-    headers:{
-      "Content-Type":"application/json",
-      Authorization:"Bearer "+localStorage.getItem("token")
+
+/* ================= UPDATE ================= */
+function updateStatus(id, status) {
+  const token = localStorage.getItem("token");
+
+  fetch(`${API_URL}/api/update-task/${id}/`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
     },
-    body:JSON.stringify({status})
-  }).then(()=>loadTasks());
+    body: JSON.stringify({ status })
+  })
+  .then(() => {
+    loadTasks();
+    loadDashboard();
+  })
+  .catch(err => console.error("Update error:", err));
 }
 
-/* NAVIGATION */
-function showSection(name){
-  dashboardSection.style.display = name==="dashboard"?"block":"none";
-  projectSection.style.display = name==="projects"?"block":"none";
-  taskSection.style.display = name==="tasks"?"block":"none";
+
+/* ================= NAV ================= */
+function showSection(name) {
+  document.getElementById("dashboardSection").style.display =
+    name === "dashboard" ? "block" : "none";
+
+  document.getElementById("projectSection").style.display =
+    name === "projects" ? "block" : "none";
+
+  document.getElementById("taskSection").style.display =
+    name === "tasks" ? "block" : "none";
 }
 
-/* LOGOUT */
-function logout(){
+
+/* ================= LOGOUT ================= */
+function logout() {
   localStorage.removeItem("token");
-  window.location.href="index.html";
+  window.location.href = "index.html";
 }
