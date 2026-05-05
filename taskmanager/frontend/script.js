@@ -60,28 +60,38 @@ function loadUsers() {
   fetch(`${API_URL}/api/users/`, {
     headers: authHeader()
   })
-    .then(res => res.json())
-    .then(users => {
-      console.log("USERS:", users); // 🔥 DEBUG
+  .then(res => res.json())
+  .then(users => {
+    console.log("USERS:", users);
 
-      const dropdown = document.getElementById("assignedUser");
-      const list = document.getElementById("usersList");
+    // 🔽 DROPDOWN (Assigned To)
+    const dropdown = document.getElementById("assignedUser");
+    if (dropdown) {
+      dropdown.innerHTML = users.map(u =>
+        `<option value="${u.id}">${u.username}</option>`
+      ).join("");
+    }
 
-      if (dropdown) {
-        dropdown.innerHTML = users.map(u =>
-          `<option value="${u.id}">${u.username}</option>`
-        ).join("");
-      }
+    // 🔽 USER LIST (Admin panel)
+    const list = document.getElementById("usersList");
+    if (list) {
+      list.innerHTML = users.map(u => `
+        <div class="card-item">
+          <div>
+            <b>${u.username}</b> (${u.role})
+            <br>
+            Active: ${u.is_active ? "Yes" : "No"} |
+            Superuser: ${u.is_superuser ? "Yes" : "No"}
+          </div>
 
-      if (list) {
-        list.innerHTML = users.map(u => `
-          <div class="card-item">
-            <span>${u.username} (${u.role})</span>
+          <div>
             <button onclick="deleteUser(${u.id})">❌</button>
           </div>
-        `).join("");
-      }
-    });
+        </div>
+      `).join("");
+    }
+  })
+  .catch(err => console.error("USER LOAD ERROR:", err));
 }
 
 /* PROJECTS */
