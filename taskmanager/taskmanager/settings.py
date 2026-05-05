@@ -79,9 +79,9 @@ WSGI_APPLICATION = "taskmanager.wsgi.application"
 
 
 
-from dotenv import load_dotenv
-import dj_database_url
 import os
+import dj_database_url
+from dotenv import load_dotenv
 
 load_dotenv()
 
