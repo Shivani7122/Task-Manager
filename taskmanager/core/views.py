@@ -6,6 +6,9 @@ from django.contrib.auth.hashers import make_password
 from .models import Project, Task, User
 from .serializers import ProjectSerializer, TaskSerializer, UserSerializer
 from datetime import date
+from rest_framework import generics
+from .models import Project
+from .serializers import ProjectSerializer
 
 
 # ================= PROJECT =================

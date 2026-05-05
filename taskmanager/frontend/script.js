@@ -198,19 +198,21 @@ function deleteTask(id) {
 
 /* CREATE PROJECT */
 function createProject() {
-  const title = document.getElementById("projectTitle").value;
-  const description = document.getElementById("projectDesc").value;
+  const title = document.getElementById("projectTitle").value.trim();
+  const description = document.getElementById("projectDesc").value.trim();
 
   if (!title || !description) {
     alert("Fill all fields");
     return;
   }
 
+  const token = localStorage.getItem("token");
+
   fetch(`${API_URL}/api/projects/create/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": "Bearer " + localStorage.getItem("token")
+      "Authorization": "Bearer " + token
     },
     body: JSON.stringify({
       title: title,
@@ -220,20 +222,25 @@ function createProject() {
   .then(async res => {
     const data = await res.json();
 
+    console.log("PROJECT RESPONSE:", data); // 👈 DEBUG
+
     if (!res.ok) {
-      console.error("ERROR:", data);
-      throw new Error(JSON.stringify(data));
+      alert("❌ " + JSON.stringify(data));
+      throw new Error("Create failed");
     }
 
     return data;
   })
   .then(() => {
-    alert("Project created ✅");
+    alert("✅ Project created");
+
+    document.getElementById("projectTitle").value = "";
+    document.getElementById("projectDesc").value = "";
+
     loadProjects();
   })
   .catch(err => {
-    console.error("CREATE ERROR:", err);
-    alert("Backend error — check console ❌");
+    console.error("PROJECT ERROR:", err);
   });
 }
 /* DELETE PROJECT */
