@@ -1,210 +1,145 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-
   <title>Dashboard</title>
-
   <link rel="stylesheet" href="style.css">
-
 </head>
 
-<body onload="initApp()">
+<body>
 
 <div class="app-wrapper">
+  <div class="container">
 
-  <!-- SIDEBAR -->
+    <!-- 🔥 SIDEBAR -->
+    <div class="sidebar">
+      <h2>⚡ TaskApp</h2>
 
-  <div class="sidebar">
+      <button id="btnDashboard" onclick="showSection('dashboard')">📊 Dashboard</button>
+      <button id="btnProjects" onclick="showSection('projects')">📁 Projects</button>
+      <button id="btnTasks" onclick="showSection('tasks')">✅ Tasks</button>
+      <button id="btnUsers" onclick="showSection('users')">👤 Users</button>
 
-    <h2>⚡ TaskApp</h2>
+      <hr style="opacity:0.2; margin:15px 0;">
 
-    <button onclick="showSection('dashboard')">
-      Dashboard
-    </button>
-
-    <button onclick="showSection('projects')">
-      Projects
-    </button>
-
-    <button onclick="showSection('tasks')">
-      Tasks
-    </button>
-
-    <button onclick="showSection('users')">
-      Users
-    </button>
-
-    <button onclick="logout()">
-      Logout
-    </button>
-
-  </div>
-
-  <!-- MAIN CONTENT -->
-
-  <div class="main-content">
-
-    <!-- DASHBOARD -->
-
-    <div id="dashboardSection">
-
-      <h2>Dashboard</h2>
-
-      <div id="dashboard"></div>
-
+      <button onclick="logout()">🚪 Logout</button>
     </div>
 
-    <!-- PROJECT SECTION -->
+    <!-- 🔥 MAIN -->
+    <div class="main">
 
-    <div
-      id="projectSection"
-      style="display:none;"
-    >
-
-      <h2>Projects</h2>
-
-      <!-- CREATE PROJECT -->
-
-      <div id="createProjectBox">
-
-        <input
-          type="text"
-          id="projectTitle"
-          placeholder="Project title"
-        >
-
-        <textarea
-          id="projectDescription"
-          placeholder="Project description"
-        ></textarea>
-
-        <button onclick="createProject()">
-          Create Project
-        </button>
-
+      <!-- 🔹 HEADER -->
+      <div class="card">
+        <h2 id="welcomeText">Welcome 👋</h2>
+        <p style="opacity:0.7">Manage your tasks efficiently</p>
       </div>
 
-      <!-- PROJECT LIST -->
+      <!-- 🔹 DASHBOARD -->
+      <div id="dashboardSection" class="card">
+        <h3>📊 Dashboard Overview</h3>
+        <div id="dashboard" class="grid">
+          <div class="loader"></div>
+        </div>
+      </div>
 
-      <div id="projectList"></div>
+      <!-- 🔹 PROJECT -->
+      <div id="projectSection" class="card" style="display:none;">
+        <h3>📁 Create Project</h3>
 
-    </div>
-
-    <!-- TASK SECTION -->
-
-    <div
-      id="taskSection"
-      style="display:none;"
-    >
-
-      <!-- CREATE TASK -->
-
-      <div id="createTaskBox">
-
-        <h2>Create Task</h2>
-
-        <input
-          type="text"
-          id="taskTitle"
-          placeholder="Task title"
-        >
-
-        <textarea
-          id="taskDescription"
-          placeholder="Task description"
-        ></textarea>
-
-        <select id="projectSelect">
-
-          <option value="">
-            Select Project
-          </option>
-
+        <input id="projectTitle" placeholder="Project title">
+        <input id="projectDesc" placeholder="Description">
+        <select id="createdBySelect">
+          <option value="">Select User</option>
         </select>
 
+        <button onclick="createProject()">➕ Create Project</button>
+
+        <h4 style="margin-top:20px;">Project List</h4>
+        <div id="projectList"></div>
+      </div>
+
+      <!-- 🔹 TASK -->
+      <div id="taskSection" class="card" style="display:none;">
+        <h3>✅ Create Task</h3>
+
+        <input id="taskTitle" placeholder="Title">
+        <input id="taskDesc" placeholder="Description">
+
+        <label>📊 Status</label>
+        <select id="status">
+          <option value="pending">Pending</option>
+          <option value="in_progress">In Progress</option>
+          <option value="done">Done</option>
+        </select>
+
+        <label>👤 Assigned To</label>
         <select id="assignedUser">
-
-          <option value="">
-            Select User
-          </option>
-
+          <option value="">Select User</option>
         </select>
 
-        <input
-          type="date"
-          id="deadline"
-        >
+        <label>📦 Project</label>
+        <select id="projectSelect">
+          <option value="">Select Project</option>
+        </select>
 
-        <button onclick="createTask()">
-          Create Task
-        </button>
+        <label>📅 Deadline</label>
+        <input type="date" id="deadline">
 
+        <button onclick="createTask()">➕ Create Task</button>
+
+        <h3 style="margin-top:20px;">Task List</h3>
+        <div id="tasksDiv"></div>
       </div>
 
-      <!-- TASK LIST -->
+      <!-- 🔹 USERS -->
+      <div id="userSection" class="card" style="display:none;">
+        <h3>👤 Manage Users</h3>
 
-      <h2>Tasks</h2>
-
-      <div id="tasksDiv"></div>
-
-    </div>
-
-    <!-- USER SECTION -->
-
-    <div
-      id="userSection"
-      style="display:none;"
-    >
-
-      <h2>Users</h2>
-
-      <!-- CREATE USER -->
-
-      <div id="createUserBox">
-
-        <input
-          type="text"
-          id="newUsername"
-          placeholder="Username"
-        >
-
-        <input
-          type="password"
-          id="newPassword"
-          placeholder="Password"
-        >
+        <input id="newUsername" placeholder="Username">
+        <input id="newPassword" placeholder="Password">
 
         <select id="newRole">
-
-          <option value="MEMBER">
-            MEMBER
-          </option>
-
-          <option value="ADMIN">
-            ADMIN
-          </option>
-
+          <option value="member">Member</option>
+          <option value="admin">Admin</option>
         </select>
 
-        <button onclick="createUser()">
-          Create User
-        </button>
+        <div class="checkbox-row">
+          <label><input type="checkbox" id="isSuperuser"> Superuser</label>
+          <label><input type="checkbox" id="isActive" checked> Active</label>
+        </div>
 
+        <button onclick="createUser()">➕ Add User</button>
+
+        <h4 style="margin-top:20px;">User List</h4>
+        <div id="usersList"></div>
       </div>
 
-      <!-- USER LIST -->
-
-      <div id="usersList"></div>
-
     </div>
-
   </div>
-
 </div>
 
 <script src="script.js"></script>
 
-</body>
+<script>
+  initApp();
 
+  // 🔥 Sidebar active highlight
+  function setActive(btnId) {
+    document.querySelectorAll(".sidebar button").forEach(b => b.classList.remove("active"));
+    document.getElementById(btnId).classList.add("active");
+  }
+
+  function showSection(name) {
+    dashboardSection.style.display = name === "dashboard" ? "block" : "none";
+    projectSection.style.display = name === "projects" ? "block" : "none";
+    taskSection.style.display = name === "tasks" ? "block" : "none";
+    userSection.style.display = name === "users" ? "block" : "none";
+
+    if (name === "dashboard") setActive("btnDashboard");
+    if (name === "projects") setActive("btnProjects");
+    if (name === "tasks") setActive("btnTasks");
+    if (name === "users") setActive("btnUsers");
+  }
+</script>
+
+</body>
 </html>
