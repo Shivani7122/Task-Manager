@@ -1,4 +1,4 @@
-const API_URL = "https://vigilant-guide-q7px6w69r7rh4q7g-8000.app.github.dev"; // ⚠️ backend port
+const API_URL = "https://vigilant-guide-q7px6w69r7rh4q7g-8000.app.github.dev";
 
 function login() {
   const username = document.getElementById("username").value.trim();
@@ -15,7 +15,7 @@ function login() {
   btn.innerHTML = "Loading...";
   btn.disabled = true;
 
-  fetch(`${API_URL}/api/login/`, {   // ✅ FIXED ENDPOINT
+  fetch(`${API_URL}/api/auth/login/`,{  
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password })
